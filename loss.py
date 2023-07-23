@@ -1,0 +1,1 @@
+# we primarily use the improved Wasserstein loss, but also experiment with least-squares loss.
