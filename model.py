@@ -377,6 +377,10 @@ if __name__ == "__main__":
 # When new layers are added to the networks, we fade them in smoothly. This avoids sudden shocks
 # to the already well-trained, smaller-resolution layers."
 
+# "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
+# During the transition we treat the layers that operate on the higher resolution like a residual block,
+# whose weight increases linearly from 0 to 1." 
+
 # "We inject the across-minibatch standard deviation as an additional feature map at $4 \times 4$ resolution
 # toward the end of the discriminator."
 # "The upsampling and downsampling operations in Table 2 correspond to 2   2 element replication and average pooling, respectively. We train the networks using Adam (Kingma & Ba, 2015) with   = 0:001,  1 = 0,  2 = 0:99, and   = 10􀀀8. We do not use any learning rate decay or rampdown, but for visualizing generator output at any given point during the training, we use an exponential running average for the weights of the generator with decay 0.999. We use a minibatch size 16 for resolutions 42–1282 and then gradually decrease the size according to 2562 ! 14, 5122 ! 6, and 10242 ! 3 to avoid exceeding the available memory budget. We use the WGAN-GP loss, but unlike Gulrajani et al. (2017), we alternate between optimizing the generator and discriminator on a per-minibatch basis, i.e., we set ncritic = 1. Additionally, we introduce a fourth term into the discriminator loss with an extremely"

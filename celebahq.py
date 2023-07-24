@@ -13,18 +13,30 @@ from torch_utils import get_image_dataset_mean_and_std
 
 
 class CelebAHQDataset(Dataset):
-    def __init__(self, root, split="train"):
+    def __init__(self, root, split="train", resolution=1024):
         super().__init__()
 
         self.img_paths = list((Path(root)/split).glob("**/*.jpg"))
+        self.split = split
+        self.resolution = resolution
+
+        self.transformer = T.Compose([
+            T.Resize(resolution),
+            T.ToTensor(),
+            # get_image_dataset_mean_and_std(root)
+            T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
+        ])
 
     def __getitem__(self, idx):
         image = Image.open(self.img_paths[idx]).convert("RGB")
+        image = self.transformer(image)
         return image
 
     def __len__(self):
         return len(self.img_paths)
-root = "/Users/jongbeomkim/Downloads/celeba_hq"
-get_image_dataset_mean_and_std(root)
-ds = CelebAHQDataset(root=root)
-ds[10].show()
+
+
+if __name__ == "__main__":
+    root = "/Users/jongbeomkim/Documents/datasets/celebahq/"
+    ds = CelebAHQDataset(root=root)
+    ds[10]
