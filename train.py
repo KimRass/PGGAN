@@ -59,8 +59,8 @@ TRANS_PHASE = False
 res_idx = 0
 resol = RESOLS[res_idx]
 batch_size = get_batch_size(resol)
-# N_WORKERS = 4
-N_WORKERS = 0
+N_WORKERS = 8
+# N_WORKERS = 0
 dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
 LAMBDA = 10
 EPS = 0.001
@@ -109,11 +109,11 @@ while True:
         disc_loss.backward()
         disc_optim.step()
 
-        if iter == N_ITERS // 1000:
-            print(f"""[{resol}][{batch}/{len(dl)}][{iter}/{N_ITERS}]""", end=" ")
+        if iter == N_ITERS // 2000:
+            print(f"""[ {resol} ][ {batch}/{len(dl)} ][ {iter}/{N_ITERS} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
 
-        if iter == N_ITERS // 10:
+        if iter == N_ITERS // 100:
             save_parameters(
                 model=gen,
                 save_path=f"""{Path(__file__).parent}/parameters/resol_{resol}_iter_{iter}.pth"""
