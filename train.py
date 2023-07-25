@@ -80,7 +80,7 @@ while True:
 
         real_image = real_image.to(DEVICE).detach()
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
-        noise = torch.randn(batch_size, 512, 1, 1).detach()
+        noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE).detach()
         gen_image = gen(noise, resol=resol, alpha=alpha).detach()
 
         ### Optimize G.
