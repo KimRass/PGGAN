@@ -75,6 +75,8 @@ while True:
         iter += 1
         if TRANS_PHASE:
             alpha = get_alpha(iter)
+        else:
+            alpha = 1
 
         real_image = real_image.to(DEVICE).detach()
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
