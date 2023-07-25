@@ -13,15 +13,17 @@ from torch_utils import get_image_dataset_mean_and_std
 
 
 class CelebAHQDataset(Dataset):
-    def __init__(self, root, split="train", resolution=1024):
+    def __init__(self, root, split="train", resol=1024):
         super().__init__()
 
         self.img_paths = list((Path(root)/split).glob("**/*.jpg"))
         self.split = split
-        self.resolution = resolution
+        self.resol = resol
 
         self.transformer = T.Compose([
-            T.Resize(resolution),
+            # "When training the discriminator, we feed in real images that are downscaled to match
+            # the current resolution of the network."
+            T.Resize(resol),
             T.ToTensor(),
             # get_image_dataset_mean_and_std(root)
             T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
