@@ -63,6 +63,7 @@ batch_size = get_batch_size(resol)
 N_WORKERS = 0
 dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
 LAMBDA = 10
+EPS = 0.001
 
 iter = 0
 breaker = False
@@ -99,15 +100,18 @@ while True:
         gp = get_gradient_penalty(
             disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=gen_image
         )
-        disc_loss = -torch.mean(real_pred) + torch.mean(gen_pred) + LAMBDA * gp + 0.001 * torch.mean(real_pred ** 2)
-        disc_loss.backward()
-        disc_optim.step()
-
-        print(f"""[{resol}][{batch}/{len(dl)}][{iter}/{N_ITERS}]""", end=" ")
-        print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
         # "We introduce a fourth term into the discriminator loss with an extremely small weight
         # to keep the discriminator output from drifting too far away from zero. We set
         # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$, where $\epsilon_{drift} = 0.001$."
+        disc_loss = -torch.mean(real_pred) + torch.mean(gen_pred)
+        disc_loss += LAMBDA * gp
+        disc_loss += EPS * torch.mean(real_pred ** 2)
+        disc_loss.backward()
+        disc_optim.step()
+
+        if iter == N_ITERS // 1000:
+            print(f"""[{resol}][{batch}/{len(dl)}][{iter}/{N_ITERS}]""", end=" ")
+            print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
 
         if iter == N_ITERS // 10:
             save_parameters(
