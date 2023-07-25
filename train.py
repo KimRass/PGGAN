@@ -109,11 +109,10 @@ while True:
         disc_loss.backward()
         disc_optim.step()
 
-        if iter == N_ITERS // 2000:
+        if iter % (N_ITERS // 1000) == 0:
             print(f"""[ {resol} ][ {batch}/{len(dl)} ][ {iter}/{N_ITERS} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
 
-        if iter == N_ITERS // 100:
             save_parameters(
                 model=gen,
                 save_path=f"""{Path(__file__).parent}/parameters/resol_{resol}_iter_{iter}.pth"""
