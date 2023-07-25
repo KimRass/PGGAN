@@ -59,7 +59,7 @@ TRANS_PHASE = False
 res_idx = 0
 resol = RESOLS[res_idx]
 batch_size = get_batch_size(resol)
-N_WORKERS = 8
+N_WORKERS = 4
 # N_WORKERS = 0
 dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
 LAMBDA = 10
