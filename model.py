@@ -53,12 +53,13 @@ class GFirstConvBlock(nn.Module):
         self.conv2 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
 
     def forward(self, x):
+        ### ORDER OF LAYERS!
         x = self.conv1(x)
-        x = perform_pixel_norm(x)
         x = F.leaky_relu(x, negative_slope=self.leakiness)
+        x = perform_pixel_norm(x)
         x = self.conv2(x)
-        x = perform_pixel_norm(x)
         x = F.leaky_relu(x, negative_slope=self.leakiness)
+        x = perform_pixel_norm(x)
         return x
 
 
@@ -74,18 +75,19 @@ class UpsampleBlock(nn.Module):
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
+        ### ORDER OF LAYERS!
         # "'$2\times$' refer to doubling the image resolution using nearest neighbor filtering."
         x = F.interpolate(x, scale_factor=2, mode="nearest")
         x = self.conv1(x)
-        # "We perform pixel-wise normalization of the feature vectors after each Conv $3 \times 3$ layer
-        # in the generator."
-        x = perform_pixel_norm(x)
         # "We use leaky ReLU with leakiness 0.2 in all layers of both networks, except for the last layer
         # that uses linear activation."
         x = F.leaky_relu(x, negative_slope=self.leakiness)
-        x = self.conv2(x)
+        # "We perform pixel-wise normalization of the feature vectors after each Conv $3 \times 3$ layer
+        # in the generator."
         x = perform_pixel_norm(x)
+        x = self.conv2(x)
         x = F.leaky_relu(x, negative_slope=self.leakiness)
+        x = perform_pixel_norm(x)
         return x
 
 

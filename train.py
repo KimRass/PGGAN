@@ -2,14 +2,14 @@
     # https://www.kaggle.com/code/heonh0/pggan-progressive-growing-gan-pggan-pytorch
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.optim import Adam
+from torch.cuda.amp.grad_scaler import GradScaler
+from torch.utils.data import DataLoader
 from pathlib import Path
 import numpy as np
-from torch.utils.data import DataLoader
 
-from torch_utils import get_device, save_parameters
+from torch_utils import get_device, save_parameters, batched_image_to_grid
+from image_utils import save_image
 from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
@@ -32,8 +32,8 @@ def get_batch_size(resol):
     return R2B[resol]
 
 
-def get_alpha(iter):
-    return ALPHAS[iter - 1]
+def get_alpha(iter_):
+    return ALPHAS[iter_ - 1]
 
 
 DEVICE = get_device()
@@ -51,6 +51,9 @@ EPS = 1e-8
 gen_optim = Adam(params=gen.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS)
 disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS)
 
+gen_scaler = GradScaler()
+disc_scaler = GradScaler()
+
 RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
 # ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
@@ -65,7 +68,7 @@ dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, 
 LAMBDA = 10
 EPS = 0.001
 
-iter = 0
+iter_ = 0
 breaker = False
 while True:
     if breaker:
@@ -73,52 +76,70 @@ while True:
 
     # for i in range(len(ds)):
     for batch, real_image in enumerate(dl, start=1):
-        iter += 1
+        iter_ += 1
         if TRANS_PHASE:
-            alpha = get_alpha(iter)
+            alpha = get_alpha(iter_)
         else:
             alpha = 1
 
         real_image = real_image.to(DEVICE).detach()
+        ### Optimize D.
+        # G와 D 중 어느 것을 먼저 학습시키는지가 중요한 지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE).detach()
-        gen_image = gen(noise, resol=resol, alpha=alpha).detach()
+        with torch.autocast(device_type=DEVICE.type):
+            # gen_image = gen(noise, resol=resol, alpha=alpha).detach()
+            gen_image = gen(noise, resol=resol, alpha=alpha)
+            real_pred = disc(real_image, resol=resol, alpha=alpha)
+            gen_pred = disc(gen_image, resol=resol, alpha=alpha)
+
+            disc_loss = -torch.mean(real_pred) + torch.mean(gen_pred)
+            gp = get_gradient_penalty(
+                disc=disc, resol=resol, alpha=alpha, real_image=real_image, gen_image=gen_image
+            )
+            disc_loss += LAMBDA * gp
+            # "We introduce a fourth term into the discriminator loss with an extremely small weight
+            # to keep the discriminator output from drifting too far away from zero. We set
+            # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
+            # where $\epsilon_{drift} = 0.001$."
+            disc_loss += EPS * torch.mean(real_pred ** 2)
+
+        disc_optim.zero_grad()
+        disc_scaler.scale(disc_loss).backward()
+        disc_scaler.step(disc_optim)
+        disc_scaler.update()
 
         ### Optimize G.
+        with torch.autocast(device_type=DEVICE.type):
+            gen_pred = disc(gen_image, resol=resol, alpha=alpha)
+            gen_loss = -torch.mean(gen_pred)
+
         gen_optim.zero_grad()
         # "We use the WGAN-GP loss. We alternate between optimizing the generator and discriminator
         # on a per-minibatch basis, i.e., we set $n_{critic} = 1$."
-        gen_pred = disc(gen_image, resol=resol, alpha=alpha)
-        gen_loss = -torch.mean(gen_pred)
-        gen_loss.backward()
-        gen_optim.step()
+        gen_scaler.scale(gen_loss).backward()
+        gen_scaler.step(gen_optim)
+        gen_scaler.update()
 
-        ### Optimize D.
-        disc_optim.zero_grad()
-        real_pred = disc(real_image, resol=resol, alpha=alpha)
-        gen_pred = disc(gen_image, resol=resol, alpha=alpha)
-        gp = get_gradient_penalty(
-            disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=gen_image
-        )
-        # "We introduce a fourth term into the discriminator loss with an extremely small weight
-        # to keep the discriminator output from drifting too far away from zero. We set
-        # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$, where $\epsilon_{drift} = 0.001$."
-        disc_loss = -torch.mean(real_pred) + torch.mean(gen_pred)
-        disc_loss += LAMBDA * gp
-        disc_loss += EPS * torch.mean(real_pred ** 2)
-        disc_loss.backward()
-        disc_optim.step()
-
-        if iter % (N_ITERS // 1000) == 0:
-            print(f"""[ {resol} ][ {batch}/{len(dl)} ][ {iter}/{N_ITERS} ]""", end=" ")
+        if iter_ % (N_ITERS // 1000) == 0:
+            print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
+
+            gen_image = gen_image.detach().cpu()
+            grid = batched_image_to_grid(
+                gen_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
+            )
+            root_dir = Path(__file__).parent
+            save_image(
+                grid, path=root_dir/f"""generated_images/resol_{resol}_iter_{iter_}_alpha_{alpha}.jpg"""
+            )
 
             save_parameters(
                 model=gen,
-                save_path=f"""{Path(__file__).parent}/parameters/resol_{resol}_iter_{iter}.pth"""
+                save_path=root_dir/f"""pretrained/resol_{resol}_iter_{iter_}_alpha_{alpha}.pth"""
             )
 
-        if iter == N_ITERS:
+        if iter_ == N_ITERS:
             if resol == RESOLS[-1] and not TRANS_PHASE:
                 breaker = True
                 break
@@ -129,7 +150,7 @@ while True:
                 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
                 dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
                 TRANS_PHASE = True
-                iter = 0
+                iter_ = 0
             else:
                 TRANS_PHASE = False
-                iter = 0
+                iter_ = 0

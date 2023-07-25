@@ -24,6 +24,7 @@ class CelebAHQDataset(Dataset):
             # "When training the discriminator, we feed in real images that are downscaled to match
             # the current resolution of the network."
             T.Resize(resol),
+            T.RandomHorizontalFlip(0.5),
             T.ToTensor(),
             # get_image_dataset_mean_and_std(root)
             T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
