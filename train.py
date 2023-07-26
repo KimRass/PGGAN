@@ -5,8 +5,7 @@
 import torch
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
-# from torch.utils.data import DataLoader
-from torch.utils.data import Subset, DataLoader
+from torch.utils.data import DataLoader
 from pathlib import Path
 import numpy as np
 
@@ -68,8 +67,7 @@ resol = RESOLS[res_idx]
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
-# dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
-dl = DataLoader(Subset(ds, indices=range(64)), batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
+dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
 LAMBDA = 10
 EPS = 0.001
 
@@ -81,6 +79,8 @@ while True:
 
     for batch, real_image in enumerate(dl, start=1):
         iter_ += 1
+        if iter_ < N_ITERS - 50:
+            continue
         if TRANS_PHASE:
             alpha = get_alpha(iter_)
         else:
