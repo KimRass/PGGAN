@@ -79,6 +79,8 @@ while True:
 
     for batch, real_image in enumerate(dl, start=1):
         iter_ += 1
+        if iter_ % 1000 == 0:
+            print(iter_)
         if iter_ < N_ITERS - 50:
             continue
         if TRANS_PHASE:
