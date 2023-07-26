@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from pathlib import Path
 import numpy as np
 from time import time
+import re
 
 from utils import (
     get_device,
@@ -23,6 +24,7 @@ from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
 ROOT_DIR = Path(__file__).parent
+CKPT_DIR = ROOT_DIR/"pretrained"
 
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # "We start with $4 \times 4$ resolution and train the networks until we have shown the discriminator
@@ -79,7 +81,15 @@ dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, 
 LAMBDA = 10
 EPS = 0.001
 
-iter_ = 0
+# CKPT_DIR = Path("/Users/jongbeomkim/Downloads/pggan_pretrained")
+# list(CKPT_DIR.glob("*.pth"))
+ckpt_path = CKPT_DIR/"resol_4_iter_62400.pth"
+gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+_, resol, _, iter_ = ckpt_path.stem.split("_")
+resol = int(resol)
+iter_ = int(iter_)
+
+# iter_ = 0
 breaker = False
 start_time = time()
 while True:
@@ -87,9 +97,10 @@ while True:
         break
 
     for batch, real_image in enumerate(dl, start=1):
-        iter_ += 100
-        if iter_ < N_ITERS - 50:
-            continue
+        iter_ += 1
+        # iter_ += 100
+        # if iter_ < N_ITERS - 50:
+        #     continue
         if TRANS_PHASE:
             alpha = get_alpha(iter_)
         else:
@@ -158,7 +169,7 @@ while True:
 
             save_parameters(
                 model=gen,
-                save_path=ROOT_DIR/f"""pretrained/resol_{resol}_iter_{iter_}{phase}.pth"""
+                save_path=CKPT_DIR/f"""resol_{resol}_iter_{iter_}{phase}.pth"""
             )
 
         if iter_ == N_ITERS:
