@@ -82,14 +82,14 @@ while True:
             alpha = 1
 
         real_image = real_image.to(DEVICE).detach()
-        # "We alternate between optimizing the generator and discriminator."
+        # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
         ### Optimize D.
         # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            gen_image = gen(noise, resol=resol, alpha=alpha).detach()
-            real_pred = disc(real_image, resol=resol, alpha=alpha)
+            gen_image = gen(noise, resol=resol, alpha=alpha)
+            real_pred = disc(real_image.detach(), resol=resol, alpha=alpha)
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
 
             disc_loss = -torch.mean(real_pred) + torch.mean(gen_pred)
@@ -111,14 +111,10 @@ while True:
 
         ### Optimize G.
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            print(gen_image)
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
-            # print(gen_pred.shape, gen_pred)
             gen_loss = -torch.mean(gen_pred)
 
         gen_optim.zero_grad()
-        # on a per-minibatch basis, i.e., we set $n_{critic} = 1$."
-        # print(gen_loss.shape, gen_loss)
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
         gen_scaler.update()
