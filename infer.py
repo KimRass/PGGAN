@@ -7,7 +7,7 @@ import numpy as np
 
 from model import Generator
 from celebahq import CelebAHQDataset
-from torch_utils import get_device, batched_image_to_grid, show_image
+from utils import get_device, batched_image_to_grid, show_image
 
 DEVICE = get_device()
 gen = Generator().to(DEVICE)

@@ -1,10 +1,37 @@
+from PIL import Image
+from pathlib import Path
+import numpy as np
+from time import time
+from datetime import timedelta
 import torch
 from torchvision.utils import make_grid
 import numpy as np
-from pathlib import Path
 from tqdm.auto import tqdm
-from PIL import Image
 import torchvision.transforms as T
+
+
+def _to_pil(img):
+    if not isinstance(img, Image.Image):
+        img = Image.fromarray(img)
+    return img
+
+
+def save_image(img, path):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    _to_pil(img).save(str(path))
+
+
+def resize_by_repeating_pixels(img, resol):
+    img = np.repeat(np.repeat(img, repeats=1024 // resol, axis=0), repeats=1024 // resol, axis=1)
+    return img
+
+
+def show_image(img):
+    copied_img = img.copy()
+    copied_img = _to_pil(copied_img)
+    copied_img.show()
 
 
 def get_device():
@@ -61,3 +88,7 @@ def batched_image_to_grid(image, n_cols, mean=(0, 0, 0), std=(1, 1, 1)):
 
 def print_number_of_parameters(model):
     print(f"""{sum([p.numel() for p in model.parameters()]):,}""")
+
+
+def get_elapsed_time(start_time):
+    return timedelta(seconds=round(time() - start_time))

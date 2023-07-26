@@ -9,7 +9,7 @@ from PIL import Image
 from pathlib import Path
 import random
 
-from torch_utils import get_image_dataset_mean_and_std
+from utils import get_image_dataset_mean_and_std
 
 
 class CelebAHQDataset(Dataset):

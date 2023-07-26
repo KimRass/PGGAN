@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from torch_utils import print_number_of_parameters
+from utils import print_number_of_parameters
 
 # "We use leaky ReLU with leakiness 0.2 in all layers of both networks, except for the last layer
 # that uses linear activation."

@@ -8,9 +8,16 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader
 from pathlib import Path
 import numpy as np
+from time import time
 
-from torch_utils import get_device, save_parameters, batched_image_to_grid
-from image_utils import save_image, resize_by_repeating_pixels
+from utils import (
+    get_device,
+    save_parameters,
+    batched_image_to_grid,
+    save_image,
+    resize_by_repeating_pixels,
+    get_elapsed_time,
+)
 from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
@@ -67,7 +74,7 @@ resol = RESOLS[res_idx]
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
-dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
+dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True)
 LAMBDA = 10
 EPS = 0.001
 
@@ -78,6 +85,7 @@ while True:
         break
 
     for batch, real_image in enumerate(dl, start=1):
+        start_time = time()
         iter_ += 1
         if iter_ % 1000 == 0:
             print(iter_)
@@ -134,7 +142,9 @@ while True:
 
         if iter_ % (N_ITERS // 500) == 0:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha: .3f} ]""", end=" ")
-            print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""")
+            print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""", end=" ")
+            print(f""" | Time: {get_elapsed_time(start_time)}""")
+            start_time = time()
 
         if iter_ % (N_ITERS // 50) == 0:
             fake_image = fake_image.detach().cpu()
@@ -161,7 +171,14 @@ while True:
                 resol = RESOLS[res_idx]
                 batch_size = get_batch_size(resol)
                 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-                dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
+                dl = DataLoader(
+                    ds,
+                    batch_size=batch_size,
+                    shuffle=True,
+                    num_workers=N_WORKERS,
+                    pin_memory=True,
+                    drop_last=True
+                )
                 TRANS_PHASE = True
                 iter_ = 0
             else:
