@@ -81,7 +81,7 @@ while True:
         else:
             alpha = 1
 
-        real_image = real_image.to(DEVICE).detach()
+        real_image = real_image.to(DEVICE)
         # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
         ### Optimize D.
         # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
