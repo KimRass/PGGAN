@@ -81,12 +81,12 @@ EPS = 0.001
 
 iter_ = 0
 breaker = False
+start_time = time()
 while True:
     if breaker:
         break
 
     for batch, real_image in enumerate(dl, start=1):
-        start_time = time()
         iter_ += 100
         if iter_ < N_ITERS - 50:
             continue

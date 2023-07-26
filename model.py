@@ -167,15 +167,12 @@ class Generator(nn.Module): # 23,074,498 ("23.1M") parameters in total.
         self.to_rgb_16 = ToRGB(16)
 
     def _fade_in(self, x, block, alpha):
-        def _forward_through_rgb_layer(x):
-            return eval(f"""self.to_rgb_{x.shape[1]}""")(x)
-
         skip = x.clone()
         skip = block(skip)
-        skip = _forward_through_rgb_layer(skip)
+        skip = eval(f"""self.to_rgb_{skip.shape[1]}""")(skip)
 
         x = _double(x)
-        x = _forward_through_rgb_layer(x)
+        x = eval(f"""self.to_rgb_{x.shape[1]}""")(x)
         return (1 - alpha) * x + alpha * skip
 
     def forward(self, x, resol, alpha):
