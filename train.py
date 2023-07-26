@@ -96,7 +96,7 @@ while True:
 
             disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
             gp = get_gradient_penalty(
-                disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
+                disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
             )
             disc_loss += LAMBDA * gp
             # "We use the WGAN-GP loss."
