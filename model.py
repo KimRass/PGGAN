@@ -52,7 +52,7 @@ class EqualLRConv2d(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
-        self.gain
+        self.gain = gain
 
         self.scale = (gain / (in_channels * kernel_size * kernel_size)) ** 0.5
 
