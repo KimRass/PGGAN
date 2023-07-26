@@ -1,5 +1,6 @@
 # References:
     # https://www.kaggle.com/code/heonh0/pggan-progressive-growing-gan-pggan-pytorch
+    # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
 import torch
 from torch.optim import Adam
@@ -96,7 +97,8 @@ while True:
 
             disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
             gp = get_gradient_penalty(
-                disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
+                # disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
+                disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
             )
             disc_loss += LAMBDA * gp
             # "We use the WGAN-GP loss."

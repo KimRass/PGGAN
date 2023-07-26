@@ -7,13 +7,9 @@ import torch
 
 # "We use the improved Wasserstein loss."
 def get_gradient_penalty(disc, resol, alpha, real_image, fake_image):
-    # real_image = torch.randn((4, 3, 8, 8))
-    # fake_image = torch.randn((4, 3, 8, 8))
-
-    # b, _, _, _ = real_image.shape
-    # eps = torch.rand(b, 1, 1, 1, device=real_image.device)
     eps = torch.rand(1, device=real_image.device)
-    avg_image = eps * real_image + (1 - eps) * fake_image.detach()
+    # avg_image = eps * real_image + (1 - eps) * fake_image.detach()
+    avg_image = eps * real_image + (1 - eps) * fake_image
     avg_image.requires_grad = True
     avg_pred = disc(avg_image, resol=resol, alpha=alpha)
 
