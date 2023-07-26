@@ -112,6 +112,7 @@ while True:
         ### Optimize G.
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
+            print(gen_pred.shape, gen_pred)
             gen_loss = -torch.mean(gen_pred)
 
         gen_optim.zero_grad()
