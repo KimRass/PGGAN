@@ -13,7 +13,7 @@ def get_gradient_penalty(disc, resol, alpha, real_image, gen_image):
     # b, _, _, _ = real_image.shape
     eps = torch.rand(1, device=real_image.device)
     avg_image = eps * real_image + (1 - eps) * gen_image
-    avg_image.requires_grad = True
+    # avg_image.requires_grad = True
     avg_pred = disc(avg_image, resol=resol, alpha=alpha)
     # avg_pred = torch.randn(4, 1).requires_grad_()
 

@@ -84,7 +84,7 @@ while True:
 
         real_image = real_image.to(DEVICE).detach()
         ### Optimize D.
-        # G와 D 중 어느 것을 먼저 학습시키는지가 중요한 지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
+        # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE).detach()
         with torch.autocast(device_type=DEVICE.type):
