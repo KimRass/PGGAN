@@ -82,11 +82,12 @@ while True:
             alpha = 1
 
         real_image = real_image.to(DEVICE).detach()
+        # "We alternate between optimizing the generator and discriminator."
         ### Optimize D.
         # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-        with torch.cuda.amp.autocast(dtype=torch.float16):
+        with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
             gen_image = gen(noise, resol=resol, alpha=alpha).detach()
             real_pred = disc(real_image, resol=resol, alpha=alpha)
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
@@ -96,6 +97,7 @@ while True:
                 disc=disc, resol=resol, alpha=alpha, real_image=real_image, gen_image=gen_image
             )
             disc_loss += LAMBDA * gp
+            # "We use the WGAN-GP loss."
             # "We introduce a fourth term into the discriminator loss with an extremely small weight
             # to keep the discriminator output from drifting too far away from zero. We set
             # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
@@ -108,13 +110,13 @@ while True:
         disc_scaler.update()
 
         ### Optimize G.
-        with torch.cuda.amp.autocast(dtype=torch.float16):
+        with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
             gen_loss = -torch.mean(gen_pred)
 
         gen_optim.zero_grad()
-        # "We use the WGAN-GP loss. We alternate between optimizing the generator and discriminator
         # on a per-minibatch basis, i.e., we set $n_{critic} = 1$."
+        print(gen_loss.shape, gen_loss)
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
         gen_scaler.update()
