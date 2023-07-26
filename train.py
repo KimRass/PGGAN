@@ -3,7 +3,8 @@
 
 import torch
 from torch.optim import Adam
-from torch.cuda.amp.grad_scaler import GradScaler
+# from torch.cuda.amp.grad_scaler import GradScaler
+from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 from pathlib import Path
 import numpy as np
