@@ -37,7 +37,7 @@ class EqualLRLinear(nn.Module):
 
         nn.init.normal_(self.weight)
         nn.init.zeros_(self.bias)
-                
+ 
     def forward(self, x):
         x = F.linear(x, weight=self.weight * self.scale, bias=self.bias)
         return x
@@ -175,8 +175,6 @@ class Generator(nn.Module):
         self.to_rgb_32 = ToRGB(in_channels=32)
         self.to_rgb_16 = ToRGB(in_channels=16)
 
-        _init_weights(self)
-
     def _fade_in(self, x, block, alpha):
         def _double(x):
             return F.interpolate(x, scale_factor=2, mode="nearest")
@@ -298,8 +296,6 @@ class Discriminator(nn.Module):
         self.from_rgb_64 = FromRGB(out_channels=64)
         self.from_rgb_32 = FromRGB(out_channels=32)
         self.from_rgb_16 = FromRGB(out_channels=16)
-
-        _init_weights(self)
 
     def add_minibatch_std(self, x):
         b, _, h, w = x.shape
