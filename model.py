@@ -6,32 +6,76 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+
+# "We use leaky ReLU with leakiness 0.2 in all layers of both networks, except for the last layer
+# that uses linear activation."
+LEAKINESS = 0.2
+GAIN = 0.2
 
 
-class EqualizedLR_Conv2d(nn.Module):
-	def __init__(self, in_ch, out_ch, kernel_size, stride=1, padding=0):
-		super().__init__()
-		self.padding = padding
-		self.stride = stride
-		self.scale = np.sqrt(2/(in_ch * kernel_size[0] * kernel_size[1]))
+# "EQUALIZED LEARNING RATE: W use a trivial $\mathcal{N}(0, 1)$ initialization and then
+# explicitly scale the weights at runtime. We set $w^{^}_{i} = w_{i} / c$, where $w_{i}$ are the weights
+# and $c$ is the per-layer normalization constant from He’s initializer."
+# "We initialize all bias parameters to zero and all weights according to the normal distribution
+# with unit variance. However, we scale the weights with a layer-specific constant at runtime."
+# The idea is to scale the parameters of each layer just before every forward propagation
+# that passes through. How much to scale by is determined by a statistic calculated
+# from the parameter values of each layer.
+class EqualLRLinear(nn.Module):
+    def __init__(self, in_features, out_features, gain=GAIN):
+        super().__init__()
 
-		self.weight = Parameter(torch.Tensor(out_ch, in_ch, *kernel_size))
-		self.bias = Parameter(torch.Tensor(out_ch))
+        self.in_features = in_features
+        self.out_features = out_features
+        self.gain = gain
 
-		nn.init.normal_(self.weight)
-		nn.init.zeros_(self.bias)
+        self.scale = np.sqrt(gain / in_features)
 
-	def forward(self, x):
-		return F.conv2d(x, self.weight*self.scale, self.bias, self.stride, self.padding)
+        self.weight = nn.Parameter(torch.Tensor(out_features, in_features))
+        self.bias = nn.Parameter(torch.Tensor(out_features))
+
+        nn.init.normal_(self.weight)
+        nn.init.zeros_(self.bias)
+                
+    def forward(self, x):
+        x = F.linear(x, weight=self.weight * self.scale, bias=self.bias)
+        return x
+
+
+class EqualLRConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, gain=GAIN):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.gain
+
+        self.scale = (gain / (in_channels * kernel_size * kernel_size)) ** 0.5
+
+        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels, kernel_size, kernel_size))
+        self.bias = nn.Parameter(torch.Tensor(out_channels))
+
+        nn.init.normal_(self.weight)
+        nn.init.zeros_(self.bias)
+                
+    def forward(self, x):
+        x = F.conv2d(x, weight=self.weight * self.scale, bias=self.bias, stride=self.stride, padding=self.padding)
+        return x
 
 
 # "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses $1 \times 1$ convolutions."
 class ToRGB(nn.Module):
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, leakiness=LEAKINESS):
         super().__init__()
 
+        self.leakiness = leakiness
+
         self.in_channels = in_channels
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=3, kernel_size=1)
+        self.conv = EqualLRConv2d(in_channels=in_channels, out_channels=3, kernel_size=1)
 
     def forward(self, x):
         x = self.conv(x)
@@ -40,14 +84,17 @@ class ToRGB(nn.Module):
 
 # "The `fromRGB` does the reverse of `toRGB`. it uses $1 \times 1$ convolutions."
 class FromRGB(nn.Module):
-    def __init__(self, out_channels):
+    def __init__(self, out_channels, leakiness=LEAKINESS):
         super().__init__()
 
+        self.leakiness = leakiness
+
         self.out_channels = out_channels
-        self.conv = nn.Conv2d(in_channels=3, out_channels=out_channels, kernel_size=1)
+        self.conv = EqualLRConv2d(in_channels=3, out_channels=out_channels, kernel_size=1)
 
     def forward(self, x):
         x = self.conv(x)
+        x = F.leaky_relu(x, negative_slope=self.leakiness)
         return x
 
 # "PIXELWISE FEATURE VECTOR NORMALIZATION IN GENERATOR: We normalize the feature vector in each pixel
@@ -61,13 +108,13 @@ def perform_pixel_norm(x, eps=1e-8):
 
 
 class GFirstConvBlock(nn.Module):
-    def __init__(self, leakiness=0.2):
+    def __init__(self, leakiness=LEAKINESS):
         super().__init__()
 
         self.leakiness = leakiness
 
-        self.conv1 = nn.Conv2d(512, 512, kernel_size=4, padding=3)
-        self.conv2 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.conv1 = EqualLRConv2d(512, 512, kernel_size=4, padding=3)
+        self.conv2 = EqualLRConv2d(512, 512, kernel_size=3, padding=1)
 
     def forward(self, x):
         ### ORDER OF LAYERS!
@@ -81,23 +128,21 @@ class GFirstConvBlock(nn.Module):
 
 
 class UpsampleBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, leakiness=0.2):
+    def __init__(self, in_channels, out_channels, leakiness=LEAKINESS):
         super().__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.leakiness = leakiness
 
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.conv1 = EqualLRConv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = EqualLRConv2d(out_channels, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
         ### ORDER OF LAYERS!
         # "'$2\times$' refer to doubling the image resolution using nearest neighbor filtering."
         x = F.interpolate(x, scale_factor=2, mode="nearest")
         x = self.conv1(x)
-        # "We use leaky ReLU with leakiness 0.2 in all layers of both networks, except for the last layer
-        # that uses linear activation."
         x = F.leaky_relu(x, negative_slope=self.leakiness)
         # "We perform pixel-wise normalization of the feature vectors after each Conv $3 \times 3$ layer
         # in the generator."
@@ -106,18 +151,6 @@ class UpsampleBlock(nn.Module):
         x = F.leaky_relu(x, negative_slope=self.leakiness)
         x = perform_pixel_norm(x)
         return x
-
-
-# "We initialize all bias parameters to zero and all weights according to the normal distribution
-# with unit variance. However, we scale the weights with a layer-specific constant at runtime."
-# The idea is to scale the parameters of each layer just before every forward propagation
-# that passes through. How much to scale by is determined by a statistic calculated
-# from the parameter values of each layer.
-def _init_weights(model):
-    for m in model.modules():
-        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
-            m.weight.data.normal_(0, 1)
-            m.bias.data.zero_()
 
 
 class Generator(nn.Module):
@@ -205,15 +238,15 @@ class Generator(nn.Module):
 
 
 class DownsampleBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, leakiness=0.2):
+    def __init__(self, in_channels, out_channels, leakiness=LEAKINESS):
         super().__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.leakiness = leakiness
 
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.conv1 = EqualLRConv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = EqualLRConv2d(out_channels, out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -225,14 +258,14 @@ class DownsampleBlock(nn.Module):
 
 
 class DLastConvBlock(nn.Module):
-    def __init__(self, leakiness=0.2):
+    def __init__(self, leakiness=LEAKINESS):
         super().__init__()
 
         self.leakiness = leakiness
 
-        self.conv1 = nn.Conv2d(513, 512, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(512, 512, kernel_size=4)
-        self.proj = nn.Linear(512, 1)
+        self.conv1 = EqualLRConv2d(513, 512, kernel_size=3, padding=1)
+        self.conv2 = EqualLRConv2d(512, 512, kernel_size=4)
+        self.proj = EqualLRLinear(512, 1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -344,12 +377,3 @@ if __name__ == "__main__":
     resol = 4
     x = torch.randn((1, 3, resol, resol))
     disc(x, resol=resol, alpha=alpha).shape
-
-# "EQUALIZED LEARNING RATE: W use a trivial $\mathcal{N}(0, 1)$ initialization and then
-# explicitly scale the weights at runtime. We set $w^{^}_{i} = w_{i} / c$, where $w_{i}$ are the weights
-# and $c$ is the per-layer normalization constant from He’s initializer."
-
-# "GANs are prone to the escalation of signal magnitudes as a result of unhealthy competition
-# between the two networks. We believe that the actual need in GANs is constraining signal magnitudes
-# and competition. We use a different approach that consists of two ingredients, neither of which
-# include learnable parameters."

@@ -5,7 +5,8 @@
 import torch
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
-from torch.utils.data import DataLoader
+# from torch.utils.data import DataLoader
+from torch.utils.data import Subset, DataLoader
 from pathlib import Path
 import numpy as np
 
@@ -66,6 +67,7 @@ batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
 dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
+# dl = DataLoader(Subset(ds, indices=range(32)), batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
 LAMBDA = 10
 EPS = 0.001
 
@@ -127,22 +129,23 @@ while True:
         gen_loss.backward()
         gen_optim.step()
 
-        if iter_ % (N_ITERS // 1000) == 0:
+        if iter_ % (N_ITERS // 500) == 0:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha} ]""", end=" ")
-            print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
+            print(f"""G loss: {gen_loss.item(): .4f} | D loss: {disc_loss.item(): .4f}""")
 
             fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
                 fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             root_dir = Path(__file__).parent
+            phase = "_transition" if TRANS_PHASE else ""
             save_image(
-                grid, path=root_dir/f"""generated_images/resol_{resol}_iter_{iter_}_alpha_{alpha}.jpg"""
+                grid, path=root_dir/f"""generated_images/resol_{resol}_iter_{iter_}{phase}.jpg"""
             )
 
             save_parameters(
                 model=gen,
-                save_path=root_dir/f"""pretrained/resol_{resol}_iter_{iter_}_alpha_{alpha}.pth"""
+                save_path=root_dir/f"""pretrained/resol_{resol}_iter_{iter_}{phase}.pth"""
             )
 
         if iter_ == N_ITERS:
