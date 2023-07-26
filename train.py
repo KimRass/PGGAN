@@ -88,13 +88,13 @@ while True:
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            gen_image = gen(noise, resol=resol, alpha=alpha)
-            real_pred = disc(real_image.detach(), resol=resol, alpha=alpha)
-            gen_pred = disc(gen_image, resol=resol, alpha=alpha)
+            real_pred = disc(real_image, resol=resol, alpha=alpha)
+            fake_image = gen(noise, resol=resol, alpha=alpha)
+            fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
-            disc_loss = -torch.mean(real_pred) + torch.mean(gen_pred)
+            disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
             gp = get_gradient_penalty(
-                disc=disc, resol=resol, alpha=alpha, real_image=real_image, gen_image=gen_image
+                disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
             )
             disc_loss += LAMBDA * gp
             # "We use the WGAN-GP loss."
@@ -111,8 +111,8 @@ while True:
 
         ### Optimize G.
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            gen_pred = disc(gen_image, resol=resol, alpha=alpha)
-            gen_loss = -torch.mean(gen_pred)
+            fake_pred = disc(fake_image, resol=resol, alpha=alpha)
+            gen_loss = -torch.mean(fake_pred)
 
         gen_optim.zero_grad()
         gen_scaler.scale(gen_loss).backward()
@@ -123,9 +123,9 @@ while True:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .0f} | D loss: {disc_loss.item(): .0f}""")
 
-            gen_image = gen_image.detach().cpu()
+            fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
-                gen_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
+                fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             root_dir = Path(__file__).parent
             save_image(
