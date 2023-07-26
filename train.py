@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from torch_utils import get_device, save_parameters, batched_image_to_grid
-from image_utils import save_image
+from image_utils import save_image, resize_by_repeating_pixels
 from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
@@ -99,7 +99,6 @@ while True:
 
         disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
         gp = get_gradient_penalty(
-            # disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
             disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
         )
         disc_loss += LAMBDA * gp
@@ -130,13 +129,14 @@ while True:
         gen_optim.step()
 
         if iter_ % (N_ITERS // 500) == 0:
-            print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha} ]""", end=" ")
-            print(f"""G loss: {gen_loss.item(): .4f} | D loss: {disc_loss.item(): .4f}""")
+            print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha: .3f} ]""", end=" ")
+            print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""")
 
             fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
                 fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
+            grid = resize_by_repeating_pixels(grid, resol=resol)
             root_dir = Path(__file__).parent
             phase = "_transition" if TRANS_PHASE else ""
             save_image(
