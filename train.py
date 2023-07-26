@@ -111,13 +111,14 @@ while True:
 
         ### Optimize G.
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+            print(gen_image)
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
-            print(gen_pred.shape, gen_pred)
+            # print(gen_pred.shape, gen_pred)
             gen_loss = -torch.mean(gen_pred)
 
         gen_optim.zero_grad()
         # on a per-minibatch basis, i.e., we set $n_{critic} = 1$."
-        print(gen_loss.shape, gen_loss)
+        # print(gen_loss.shape, gen_loss)
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
         gen_scaler.update()
