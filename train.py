@@ -90,38 +90,42 @@ while True:
 
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-        with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            real_pred = disc(real_image, resol=resol, alpha=alpha)
-            fake_image = gen(noise, resol=resol, alpha=alpha)
-            fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
+        # with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+        real_pred = disc(real_image, resol=resol, alpha=alpha)
+        fake_image = gen(noise, resol=resol, alpha=alpha)
+        fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
-            disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
-            gp = get_gradient_penalty(
-                # disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
-                disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
-            )
-            disc_loss += LAMBDA * gp
-            # "We use the WGAN-GP loss."
-            # "We introduce a fourth term into the discriminator loss with an extremely small weight
-            # to keep the discriminator output from drifting too far away from zero. We set
-            # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
-            # where $\epsilon_{drift} = 0.001$."
-            disc_loss += EPS * torch.mean(real_pred ** 2)
+        disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
+        gp = get_gradient_penalty(
+            # disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image
+            disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
+        )
+        disc_loss += LAMBDA * gp
+        # "We use the WGAN-GP loss."
+        # "We introduce a fourth term into the discriminator loss with an extremely small weight
+        # to keep the discriminator output from drifting too far away from zero. We set
+        # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
+        # where $\epsilon_{drift} = 0.001$."
+        disc_loss += EPS * torch.mean(real_pred ** 2)
 
-        disc_scaler.scale(disc_loss).backward()
-        disc_scaler.step(disc_optim)
-        disc_scaler.update()
+        # disc_scaler.scale(disc_loss).backward()
+        # disc_scaler.step(disc_optim)
+        # disc_scaler.update()
+        disc_loss.backward()
+        disc_optim.step()
 
         ### Optimize G.
         gen_optim.zero_grad()
 
-        with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            fake_pred = disc(fake_image, resol=resol, alpha=alpha)
-            gen_loss = -torch.mean(fake_pred)
+        # with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+        fake_pred = disc(fake_image, resol=resol, alpha=alpha)
+        gen_loss = -torch.mean(fake_pred)
 
-        gen_scaler.scale(gen_loss).backward()
-        gen_scaler.step(gen_optim)
-        gen_scaler.update()
+        # gen_scaler.scale(gen_loss).backward()
+        # gen_scaler.step(gen_optim)
+        # gen_scaler.update()
+        gen_loss.backward()
+        gen_optim.step()
 
         if iter_ % (N_ITERS // 1000) == 0:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha} ]""", end=" ")
