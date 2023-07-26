@@ -14,7 +14,7 @@ def get_gradient_penalty(disc, resol, alpha, real_image, fake_image):
     # eps = torch.rand(b, 1, 1, 1, device=real_image.device)
     eps = torch.rand(1, device=real_image.device)
     avg_image = eps * real_image + (1 - eps) * fake_image.detach()
-    # avg_image.requires_grad = True
+    avg_image.requires_grad = True
     avg_pred = disc(avg_image, resol=resol, alpha=alpha)
 
     real_label = torch.ones_like(avg_pred, device=avg_pred.device)
