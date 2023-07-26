@@ -86,7 +86,7 @@ while True:
         # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-        with torch.cuda.amp.autocast(device_type=DEVICE.type, dtype=torch.float16):
+        with torch.cuda.amp.autocast(dtype=torch.float16):
             gen_image = gen(noise, resol=resol, alpha=alpha).detach()
             real_pred = disc(real_image, resol=resol, alpha=alpha)
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
@@ -108,7 +108,7 @@ while True:
         disc_scaler.update()
 
         ### Optimize G.
-        with torch.cuda.amp.autocast(device_type=DEVICE.type, dtype=torch.float16):
+        with torch.cuda.amp.autocast(dtype=torch.float16):
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
             gen_loss = -torch.mean(gen_pred)
 
