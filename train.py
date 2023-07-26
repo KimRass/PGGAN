@@ -29,7 +29,8 @@ R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
-N_ITERS = 800_000
+# N_ITERS = 800_000
+N_ITERS = 400_000
 # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
 # During the transition we treat the layers that operate on the higher resolution like a residual block,
 # whose weight increases linearly from 0 to 1."
@@ -86,9 +87,7 @@ while True:
 
     for batch, real_image in enumerate(dl, start=1):
         start_time = time()
-        iter_ += 1
-        if iter_ % 1000 == 0:
-            print(iter_)
+        iter_ += 100
         if iter_ < N_ITERS - 50:
             continue
         if TRANS_PHASE:
