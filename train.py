@@ -74,7 +74,6 @@ while True:
     if breaker:
         break
 
-    # for i in range(len(ds)):
     for batch, real_image in enumerate(dl, start=1):
         iter_ += 1
         if TRANS_PHASE:
@@ -86,10 +85,9 @@ while True:
         ### Optimize D.
         # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
-        noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE).detach()
+        noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type):
-            # gen_image = gen(noise, resol=resol, alpha=alpha).detach()
-            gen_image = gen(noise, resol=resol, alpha=alpha)
+            gen_image = gen(noise, resol=resol, alpha=alpha).detach()
             real_pred = disc(real_image, resol=resol, alpha=alpha)
             gen_pred = disc(gen_image, resol=resol, alpha=alpha)
 
