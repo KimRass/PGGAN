@@ -16,6 +16,8 @@ from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
+ROOT_DIR = Path(__file__).parent
+
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # "We start with $4 \times 4$ resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
@@ -66,8 +68,8 @@ resol = RESOLS[res_idx]
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
-dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
-# dl = DataLoader(Subset(ds, indices=range(32)), batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
+# dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
+dl = DataLoader(Subset(ds, indices=range(64)), batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, drop_last=True)
 LAMBDA = 10
 EPS = 0.001
 
@@ -92,10 +94,10 @@ while True:
 
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-        # with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-        real_pred = disc(real_image, resol=resol, alpha=alpha)
-        fake_image = gen(noise, resol=resol, alpha=alpha)
-        fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
+        with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+            real_pred = disc(real_image, resol=resol, alpha=alpha)
+            fake_image = gen(noise, resol=resol, alpha=alpha)
+            fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
         disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
         gp = get_gradient_penalty(
@@ -109,43 +111,43 @@ while True:
         # where $\epsilon_{drift} = 0.001$."
         disc_loss += EPS * torch.mean(real_pred ** 2)
 
-        # disc_scaler.scale(disc_loss).backward()
-        # disc_scaler.step(disc_optim)
-        # disc_scaler.update()
-        disc_loss.backward()
-        disc_optim.step()
+        disc_scaler.scale(disc_loss).backward()
+        disc_scaler.step(disc_optim)
+        disc_scaler.update()
+        # disc_loss.backward()
+        # disc_optim.step()
 
         ### Optimize G.
         gen_optim.zero_grad()
 
-        # with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-        fake_pred = disc(fake_image, resol=resol, alpha=alpha)
-        gen_loss = -torch.mean(fake_pred)
+        with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+            fake_pred = disc(fake_image, resol=resol, alpha=alpha)
+            gen_loss = -torch.mean(fake_pred)
 
-        # gen_scaler.scale(gen_loss).backward()
-        # gen_scaler.step(gen_optim)
-        # gen_scaler.update()
-        gen_loss.backward()
-        gen_optim.step()
+        gen_scaler.scale(gen_loss).backward()
+        gen_scaler.step(gen_optim)
+        gen_scaler.update()
+        # gen_loss.backward()
+        # gen_optim.step()
 
         if iter_ % (N_ITERS // 500) == 0:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha: .3f} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""")
 
+        if iter_ % (N_ITERS // 50) == 0:
             fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
                 fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
-            root_dir = Path(__file__).parent
             phase = "_transition" if TRANS_PHASE else ""
             save_image(
-                grid, path=root_dir/f"""generated_images/resol_{resol}_iter_{iter_}{phase}.jpg"""
+                grid, path=ROOT_DIR/f"""generated_images/resol_{resol}_iter_{iter_}{phase}.jpg"""
             )
 
             save_parameters(
                 model=gen,
-                save_path=root_dir/f"""pretrained/resol_{resol}_iter_{iter_}{phase}.pth"""
+                save_path=ROOT_DIR/f"""pretrained/resol_{resol}_iter_{iter_}{phase}.pth"""
             )
 
         if iter_ == N_ITERS:

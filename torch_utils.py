@@ -59,13 +59,5 @@ def batched_image_to_grid(image, n_cols, mean=(0, 0, 0), std=(1, 1, 1)):
     return grid
 
 
-def _to_pil(img):
-    if not isinstance(img, Image.Image):
-        img = Image.fromarray(img)
-    return img
-
-
-def show_image(img):
-    copied_img = img.copy()
-    copied_img = _to_pil(copied_img)
-    copied_img.show()
+def print_number_of_parameters(model):
+    print(f"""{sum([p.numel() for p in model.parameters()]):,}""")

@@ -19,3 +19,9 @@ def save_image(img, path):
 def resize_by_repeating_pixels(img, resol):
     img = np.repeat(np.repeat(img, repeats=1024 // resol, axis=0), repeats=1024 // resol, axis=1)
     return img
+
+
+def show_image(img):
+    copied_img = img.copy()
+    copied_img = _to_pil(copied_img)
+    copied_img.show()
