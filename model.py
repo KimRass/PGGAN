@@ -8,6 +8,23 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class EqualizedLR_Conv2d(nn.Module):
+	def __init__(self, in_ch, out_ch, kernel_size, stride=1, padding=0):
+		super().__init__()
+		self.padding = padding
+		self.stride = stride
+		self.scale = np.sqrt(2/(in_ch * kernel_size[0] * kernel_size[1]))
+
+		self.weight = Parameter(torch.Tensor(out_ch, in_ch, *kernel_size))
+		self.bias = Parameter(torch.Tensor(out_ch))
+
+		nn.init.normal_(self.weight)
+		nn.init.zeros_(self.bias)
+
+	def forward(self, x):
+		return F.conv2d(x, self.weight*self.scale, self.bias, self.stride, self.padding)
+
+
 # "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses $1 \times 1$ convolutions."
 class ToRGB(nn.Module):
     def __init__(self, in_channels):
