@@ -150,7 +150,7 @@ while True:
         # gen_loss.backward()
         # gen_optim.step()
 
-        if iter_ % (N_ITERS // 500) == 0:
+        if iter_ % (N_ITERS // 200) == 0:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha: .3f} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""", end=" ")
             print(f""" | Time: {get_elapsed_time(start_time)}""")
