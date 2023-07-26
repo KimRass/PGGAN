@@ -85,6 +85,8 @@ while True:
         # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
         ### Optimize D.
         # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
+        disc_optim.zero_grad()
+
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
@@ -104,17 +106,17 @@ while True:
             # where $\epsilon_{drift} = 0.001$."
             disc_loss += EPS * torch.mean(real_pred ** 2)
 
-        disc_optim.zero_grad()
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
         disc_scaler.update()
 
         ### Optimize G.
+        gen_optim.zero_grad()
+
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
             fake_pred = disc(fake_image, resol=resol, alpha=alpha)
             gen_loss = -torch.mean(fake_pred)
 
-        gen_optim.zero_grad()
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
         gen_scaler.update()
