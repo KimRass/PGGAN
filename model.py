@@ -266,6 +266,7 @@ class DownsampleBlock(nn.Module):
         else:
             x = x.view(-1, self.out_channels)
             x = self.proj(x)
+            x = x.view(-1, 1, 1, 1)
         return x
 
 
