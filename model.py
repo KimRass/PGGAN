@@ -266,8 +266,8 @@ class DownsampleBlock(nn.Module):
         else:
             x = x.view(-1, self.out_channels)
             x = self.proj(x)
-            # x = x.view(-1, 1, 1, 1)
         return x
+
 
 class Discriminator(nn.Module): # 25,438,593 parameters in total.
     def __init__(self):
@@ -339,17 +339,18 @@ class Discriminator(nn.Module): # 25,438,593 parameters in total.
 
 
 if __name__ == "__main__":
-    BATCH_SIZE = 1
+    BATCH_SIZE = 2
     gen = Generator()
     x = torch.randn(BATCH_SIZE, 512, 1, 1)
     gen(x, resol=4, alpha=0.7).shape
-    print_number_of_parameters(gen)
-    for p in disc.parameters():
-        p.shape
+    # print_number_of_parameters(gen)
+    # for p in disc.parameters():
+    #     p.shape
 
     disc = Discriminator()
-    alpha = 0.5
-    resol = 4
-    x = torch.randn((1, 3, resol, resol))
+    alpha = 0
+    resol = 1024
+    x = torch.randn((BATCH_SIZE, 3, resol, resol))
     disc(x, resol=resol, alpha=alpha).shape
-    print_number_of_parameters(disc)
+    disc(x, resol=resol, alpha=alpha)
+    # print_number_of_parameters(disc)

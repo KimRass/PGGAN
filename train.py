@@ -83,7 +83,7 @@ EPS = 0.001
 
 # CKPT_DIR = Path("/Users/jongbeomkim/Downloads/pggan_pretrained")
 # list(CKPT_DIR.glob("*.pth"))
-ckpt_path = CKPT_DIR/"resol_4_iter_62400.pth"
+ckpt_path = CKPT_DIR/"resol_4_iter_400000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 _, resol, _, iter_ = ckpt_path.stem.split("_")
 resol = int(resol)
@@ -172,7 +172,7 @@ while True:
                 save_path=CKPT_DIR/f"""resol_{resol}_iter_{iter_}{phase}.pth"""
             )
 
-        if iter_ == N_ITERS:
+        if iter_ >= N_ITERS:
             if resol == RESOLS[-1] and not TRANS_PHASE:
                 breaker = True
                 break
