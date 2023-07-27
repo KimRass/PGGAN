@@ -3,6 +3,7 @@
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
 import torch
+import torchvision.transforms.functional as TF
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader
@@ -73,7 +74,7 @@ resol = RESOLS[res_idx]
 ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
 # ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-TRANS_PHASE = False
+TRANS_PHASE = True
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
@@ -81,9 +82,7 @@ dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, 
 LAMBDA = 10
 EPS = 0.001
 
-# CKPT_DIR = Path("/Users/jongbeomkim/Downloads/pggan_pretrained")
-# list(CKPT_DIR.glob("*.pth"))
-ckpt_path = CKPT_DIR/"resol_4_iter_400000.pth"
+ckpt_path = CKPT_DIR/"resol_8_iter_400000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 # _, resol, _, iter_ = ckpt_path.stem.split("_")
 # resol = int(resol)
@@ -99,14 +98,13 @@ while True:
 
     for batch, real_image in enumerate(dl, start=1):
         iter_ += 1
-        # iter_ += 100
-        # if iter_ < N_ITERS - 50:
-        #     continue
+
         if TRANS_PHASE:
             alpha = get_alpha(iter_)
         else:
             alpha = 1
 
+        real_image = TF.resize(real_image, size=resol)
         real_image = real_image.to(DEVICE)
         # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
         ### Optimize D.
@@ -135,8 +133,6 @@ while True:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
         disc_scaler.update()
-        # disc_loss.backward()
-        # disc_optim.step()
 
         ### Optimize G.
         gen_optim.zero_grad()
@@ -148,10 +144,8 @@ while True:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
         gen_scaler.update()
-        # gen_loss.backward()
-        # gen_optim.step()
 
-        if iter_ % (N_ITERS // 200) == 0:
+        if iter_ % (N_ITERS // 100) == 0:
             print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha: .3f} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""", end=" ")
             print(f""" | Time: {get_elapsed_time(start_time)}""")
@@ -184,37 +178,5 @@ while True:
                 res_idx += 1
                 resol = RESOLS[res_idx]
                 batch_size = get_batch_size(resol)
-                ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-                dl = DataLoader(
-                    ds,
-                    batch_size=batch_size,
-                    shuffle=True,
-                    num_workers=N_WORKERS,
-                    pin_memory=True,
-                    drop_last=True
-                )
                 TRANS_PHASE = True
                 iter_ = 0
-
-
-            # if resol == RESOLS[-1] and not TRANS_PHASE:
-            #     breaker = True
-            #     break
-            # elif not TRANS_PHASE:
-            #     res_idx += 1
-            #     resol = RESOLS[res_idx]
-            #     batch_size = get_batch_size(resol)
-            #     ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-            #     dl = DataLoader(
-            #         ds,
-            #         batch_size=batch_size,
-            #         shuffle=True,
-            #         num_workers=N_WORKERS,
-            #         pin_memory=True,
-            #         drop_last=True
-            #     )
-            #     TRANS_PHASE = True
-            #     iter_ = 0
-            # else:
-            #     TRANS_PHASE = False
-            #     iter_ = 0
