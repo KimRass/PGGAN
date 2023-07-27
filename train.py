@@ -115,7 +115,7 @@ while True:
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            print(real_image_shape)
+            print(real_image.shape)
             real_pred = disc(real_image, resol=resol, alpha=alpha)
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
