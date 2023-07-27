@@ -186,6 +186,7 @@ while True:
                 resol = RESOLS[res_idx]
                 batch_size = get_batch_size(resol)
                 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
+                print(ds.resol)
                 dl = DataLoader(
                     ds,
                     batch_size=batch_size,
