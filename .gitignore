@@ -5,6 +5,5 @@ etc/
 bin/
 lib/
 lib64
-pretrained/
 pyvenv.cfg
 share/
