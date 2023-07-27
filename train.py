@@ -72,7 +72,7 @@ ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
 # ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 ds = CelebAHQDataset(root=ROOT, split="train", resol=RESOLS[0])
 TRANS_PHASE = False
-res_idx = 0
+res_idx = 1
 resol = RESOLS[res_idx]
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
@@ -88,7 +88,7 @@ gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 _, resol, _, iter_ = ckpt_path.stem.split("_")
 resol = int(resol)
 iter_ = int(iter_)
-res_idx = 0
+# res_idx = 0
 
 # iter_ = 0
 breaker = False
@@ -116,7 +116,6 @@ while True:
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
-            print(iter_, real_image.shape, res_idx, resol, alpha)
             real_pred = disc(real_image, resol=resol, alpha=alpha)
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
@@ -186,7 +185,6 @@ while True:
                 resol = RESOLS[res_idx]
                 batch_size = get_batch_size(resol)
                 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-                print(ds.resol)
                 dl = DataLoader(
                     ds,
                     batch_size=batch_size,
