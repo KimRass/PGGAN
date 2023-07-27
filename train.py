@@ -85,12 +85,12 @@ EPS = 0.001
 # list(CKPT_DIR.glob("*.pth"))
 ckpt_path = CKPT_DIR/"resol_4_iter_400000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
-_, resol, _, iter_ = ckpt_path.stem.split("_")
-resol = int(resol)
-iter_ = int(iter_)
+# _, resol, _, iter_ = ckpt_path.stem.split("_")
+# resol = int(resol)
+# iter_ = int(iter_)
 # res_idx = 0
 
-# iter_ = 0
+iter_ = 0
 breaker = False
 start_time = time()
 while True:
