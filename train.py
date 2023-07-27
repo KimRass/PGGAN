@@ -74,7 +74,7 @@ resol = RESOLS[res_idx]
 ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
 # ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-TRANS_PHASE = True
+TRANS_PHASE = False
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
@@ -82,7 +82,7 @@ dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, 
 LAMBDA = 10
 EPS = 0.001
 
-ckpt_path = CKPT_DIR/"resol_8_iter_400000.pth"
+ckpt_path = CKPT_DIR/"resol_16_iter_96000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 # _, resol, _, iter_ = ckpt_path.stem.split("_")
 # resol = int(resol)
