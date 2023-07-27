@@ -82,7 +82,7 @@ dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, 
 LAMBDA = 10
 EPS = 0.001
 
-ckpt_path = CKPT_DIR/"resol_16_iter_240000.pth"
+ckpt_path = CKPT_DIR/"16x16/resol_16_iter_240000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 _, resol, _, iter_ = ckpt_path.stem.split("_")
 # resol = int(resol)
