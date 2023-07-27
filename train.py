@@ -89,8 +89,7 @@ gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 # iter_ = int(iter_)
 # res_idx = 0
 
-# iter_ = 0
-iter_ = 224000
+iter_ = 0
 breaker = False
 start_time = time()
 while True:
