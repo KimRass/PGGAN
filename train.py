@@ -74,7 +74,7 @@ resol = RESOLS[res_idx]
 ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
 # ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
-TRANS_PHASE = True
+TRANS_PHASE = False
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
@@ -82,14 +82,14 @@ dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, 
 LAMBDA = 10
 EPS = 0.001
 
-ckpt_path = CKPT_DIR/"resol_16_iter_224000_transition.pth"
+ckpt_path = CKPT_DIR/"resol_16_iter_240000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
-# _, resol, _, iter_ = ckpt_path.stem.split("_")
+_, resol, _, iter_ = ckpt_path.stem.split("_")
 # resol = int(resol)
-# iter_ = int(iter_)
+iter_ = int(iter_)
 # res_idx = 0
 
-iter_ = 224_000
+# iter_ = 224_000
 breaker = False
 start_time = time()
 while True:
@@ -156,9 +156,9 @@ while True:
                 fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
-            phase = "_transition" if TRANS_PHASE else ""
+            phase = "transition_phase_" if TRANS_PHASE else ""
             save_image(
-                grid, path=ROOT_DIR/f"""generated_images/resol_{resol}_iter_{iter_}{phase}.jpg"""
+                grid, path=ROOT_DIR/f"""generated_images/{phase}resol_{resol}_iter_{iter_}.jpg"""
             )
 
             save_parameters(
