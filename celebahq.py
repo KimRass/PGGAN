@@ -21,7 +21,7 @@ class CelebAHQDataset(Dataset):
         self.resol = resol
 
         self.transformer = T.Compose([
-            # T.Resize(resol),
+            T.Resize(resol),
             T.RandomHorizontalFlip(0.5),
             T.ToTensor(),
             # get_image_dataset_mean_and_std(root)

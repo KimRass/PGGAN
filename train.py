@@ -69,7 +69,7 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
-res_idx = 1
+res_idx = 2
 resol = RESOLS[res_idx]
 ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
 # ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
@@ -104,7 +104,7 @@ while True:
         else:
             alpha = 1
 
-        real_image = TF.resize(real_image, size=resol)
+        # real_image = TF.resize(real_image, size=resol, antialias=True)
         real_image = real_image.to(DEVICE)
         # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
         ### Optimize D.
