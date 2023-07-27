@@ -84,7 +84,7 @@ EPS = 0.001
 
 ckpt_path = CKPT_DIR/"16x16/resol_16_iter_240000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
-_, resol, _, iter_ = ckpt_path.stem.split("_")
+_, _, _, iter_ = ckpt_path.stem.split("_")
 # resol = int(resol)
 iter_ = int(iter_)
 # res_idx = 0
