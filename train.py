@@ -68,12 +68,12 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
-ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
-# ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-ds = CelebAHQDataset(root=ROOT, split="train", resol=RESOLS[0])
-TRANS_PHASE = False
 res_idx = 1
 resol = RESOLS[res_idx]
+ROOT = "/home/ubuntu/project/celebahq/celeba_hq"
+# ROOT = "/Users/jongbeomkim/Documents/datasets/celebahq/"
+ds = CelebAHQDataset(root=ROOT, split="train", resol=resol)
+TRANS_PHASE = False
 batch_size = get_batch_size(resol)
 N_WORKERS = 4
 # N_WORKERS = 0
