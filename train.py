@@ -22,8 +22,6 @@ from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
-global AUTOCAST
-
 # DATA_DIR = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
@@ -152,7 +150,6 @@ while True:
         alpha=alpha,
         real_image=real_image,
         fake_image=fake_image,
-        AUTOCAST=AUTOCAST,
     )
     if AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
