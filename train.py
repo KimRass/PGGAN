@@ -116,7 +116,7 @@ disc_scaler = GradScaler()
 # ckpt_path = CKPT_DIR/"transition_phase_resol_32_step24000.pth"
 # gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
-resol_idx = 3
+resol_idx = 0
 resol = RESOLS[resol_idx]
 ds = CelebAHQDataset(data_dir=DATA_DIR, split="train", resol=resol)
 batch_size = get_batch_size(resol)
