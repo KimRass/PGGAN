@@ -1,5 +1,4 @@
 # References:
-    # https://www.kaggle.com/code/heonh0/pggan-progressive-growing-gan-pggan-pytorch
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
 import torch
@@ -7,7 +6,6 @@ from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader
 from pathlib import Path
-import numpy as np
 from time import time
 from contextlib import nullcontext
 
@@ -135,6 +133,7 @@ while True:
     real_image = next(iter(dl)).to(DEVICE)
 
     step += 1
+    print(step)
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
 
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
@@ -183,7 +182,7 @@ while True:
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
-    if step % (N_IMAGES // 50) == 0:
+    if step % 8000 == 0:
         fake_image = fake_image.detach().cpu()
         grid = batched_image_to_grid(
             fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
