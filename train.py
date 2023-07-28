@@ -119,7 +119,7 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-ckpt_path = CKPT_DIR/"32x32/resol_32_iter_26000.pth"
+ckpt_path = CKPT_DIR/"resol_32_iter_26000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
 resol_idx = 3
