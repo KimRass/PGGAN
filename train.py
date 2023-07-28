@@ -3,14 +3,12 @@
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
 import torch
-import torchvision.transforms.functional as TF
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader
 from pathlib import Path
 import numpy as np
 from time import time
-import re
 
 from utils import (
     get_device,
@@ -32,18 +30,22 @@ R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
-# N_ITERS = 800_000
-N_ITERS = 400_000
+N_IMAGES = 800_000
 # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
 # During the transition we treat the layers that operate on the higher resolution like a residual block,
 # whose weight increases linearly from 0 to 1."
-ALPHAS = np.linspace(0, 1, N_ITERS)
+ALPHAS = np.linspace(0, 1, N_IMAGES)
 
 # "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
 # the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
 # to avoid exceeding the available memory budget."
 def get_batch_size(resol):
     return R2B[resol]
+
+
+def get_n_iters(batch_size):
+    n_iters = N_IMAGES // batch_size
+    return n_iters
 
 
 def get_alpha(iter_):
@@ -105,12 +107,8 @@ while True:
             alpha = 1
 
         real_image = real_image.to(DEVICE)
-        # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
-        ### Optimize D.
-        # G와 D 중 어느 것을 먼저 학습시키는지가 중요한지는 잘 모르겠지만 다른 코드에서는 보통 D를 먼저 학습시키는 듯합니다.
         disc_optim.zero_grad()
 
-        # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
             real_pred = disc(real_image, resol=resol, alpha=alpha)
@@ -122,18 +120,12 @@ while True:
             disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
         )
         disc_loss += LAMBDA * gp
-        # "We use the WGAN-GP loss."
-        # "We introduce a fourth term into the discriminator loss with an extremely small weight
-        # to keep the discriminator output from drifting too far away from zero. We set
-        # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
-        # where $\epsilon_{drift} = 0.001$."
         disc_loss += EPS * torch.mean(real_pred ** 2)
 
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
         disc_scaler.update()
 
-        ### Optimize G.
         gen_optim.zero_grad()
 
         with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
@@ -144,13 +136,13 @@ while True:
         gen_scaler.step(gen_optim)
         gen_scaler.update()
 
-        if iter_ % (N_ITERS // 100) == 0:
-            print(f"""[ {resol} ][ {iter_}/{N_ITERS} ][ {alpha: .3f} ]""", end=" ")
+        if iter_ % (N_IMAGES // 100) == 0:
+            print(f"""[ {resol} ][ {iter_}/{N_IMAGES} ][ {alpha: .3f} ]""", end=" ")
             print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""", end=" ")
             print(f""" | Time: {get_elapsed_time(start_time)}""")
             start_time = time()
 
-        if iter_ % (N_ITERS // 50) == 0:
+        if iter_ % (N_IMAGES // 50) == 0:
             fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
                 fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
@@ -166,7 +158,7 @@ while True:
                 save_path=CKPT_DIR/f"""resol_{resol}_iter_{iter_}{phase}.pth"""
             )
 
-        if iter_ >= N_ITERS:
+        if iter_ >= N_IMAGES:
             if TRANS_PHASE:
                 TRANS_PHASE = False
                 iter_ = 0
