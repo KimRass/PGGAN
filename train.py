@@ -88,8 +88,8 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-ckpt_path = CKPT_DIR/"resol_4_step_40000.pth"
-gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+# ckpt_path = CKPT_DIR/"resol_4_step_40000.pth"
+# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
 resol_idx = 0
 resol = RESOLS[resol_idx]
@@ -101,7 +101,8 @@ dl = DataLoader(
 n_steps = get_n_steps(batch_size)
 
 trans_phase = False
-step = 40000
+# step = 40000
+step = 0
 start_time = time()
 while True:
     real_image = next(iter(dl)).to(DEVICE)
