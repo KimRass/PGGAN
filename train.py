@@ -70,31 +70,6 @@ def get_alpha(step, n_steps, trans_phase):
     return alpha
 
 
-def get_disc_loss(disc, resol, alpha, real_image, fake_image):
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
-        real_pred = disc(real_image, resol=resol, alpha=alpha)
-        fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
-
-    disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
-    gp = get_gradient_penalty(
-        disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
-    )
-    disc_loss += LAMBDA * gp
-    # "We use the WGAN-GP loss."
-    # "We introduce a fourth term into the discriminator loss with an extremely small weight
-    # to keep the discriminator output from drifting too far away from zero. We set
-    # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
-    # where $\epsilon_{drift} = 0.001$."
-    disc_loss += EPS * torch.mean(real_pred ** 2)
-    return disc_loss
-
-
-def get_gen_loss(disc, fake_image):
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
-        fake_pred = disc(fake_image, resol=resol, alpha=alpha)
-        gen_loss = -torch.mean(fake_pred)
-    return gen_loss
-
 gen = Generator()
 gen = nn.DataParallel(gen)
 gen = gen.to(DEVICE)
@@ -113,8 +88,8 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-# ckpt_path = CKPT_DIR/"transition_phase_resol_32_step24000.pth"
-# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+ckpt_path = CKPT_DIR/"resol_4_step_40000.pth"
+gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
 resol_idx = 0
 resol = RESOLS[resol_idx]
@@ -125,10 +100,8 @@ dl = DataLoader(
 )
 n_steps = get_n_steps(batch_size)
 
-# trans_phase = True
-# step = 26000
 trans_phase = False
-step = 0
+step = 40000
 start_time = time()
 while True:
     real_image = next(iter(dl)).to(DEVICE)
@@ -136,21 +109,29 @@ while True:
     step += 1
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
 
-    # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
-    noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
-        fake_image = gen(noise, resol=resol, alpha=alpha)
-
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
     disc_optim.zero_grad()
-    disc_loss = get_disc_loss(
-        disc=disc,
-        resol=resol,
-        alpha=alpha,
-        real_image=real_image,
-        fake_image=fake_image,
+
+    # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
+    noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
+        real_pred = disc(real_image, resol=resol, alpha=alpha)
+        fake_image = gen(noise, resol=resol, alpha=alpha)
+        fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
+
+    disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
+    gp = get_gradient_penalty(
+        disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
     )
+    disc_loss += LAMBDA * gp
+    # "We use the WGAN-GP loss."
+    # "We introduce a fourth term into the discriminator loss with an extremely small weight
+    # to keep the discriminator output from drifting too far away from zero. We set
+    # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
+    # where $\epsilon_{drift} = 0.001$."
+    disc_loss += EPS * torch.mean(real_pred ** 2)
+
     if AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
@@ -161,7 +142,11 @@ while True:
 
     ### Optimize G.
     gen_optim.zero_grad()
-    gen_loss = get_gen_loss(disc=disc, fake_image=fake_image)
+
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+        fake_pred = disc(fake_image, resol=resol, alpha=alpha)
+        gen_loss = -torch.mean(fake_pred)
+
     if AUTOCAST:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
