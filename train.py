@@ -23,7 +23,8 @@ from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
 # DATA_DIR = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
+# DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
+DATA_DIR = "/home/user/cv/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 SAVE_DIR = ROOT_DIR/"generated_images"

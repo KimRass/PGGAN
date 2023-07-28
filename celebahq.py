@@ -1,13 +1,13 @@
 # Source: https://www.kaggle.com/datasets/lamsimon/celebahq
 
-# "We represent training and generated images in $[-1, 1]$".
-
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import torchvision.transforms as T
 from PIL import Image
 from pathlib import Path
 
 from utils import get_image_dataset_mean_and_std
+
+# "We represent training and generated images in $[-1, 1]$".
 
 
 class CelebAHQDataset(Dataset):
