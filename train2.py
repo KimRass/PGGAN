@@ -133,7 +133,6 @@ while True:
     real_image = next(iter(dl)).to(DEVICE)
 
     step += 1
-    print(step)
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
 
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
@@ -176,7 +175,7 @@ while True:
         gen_loss.backward()
         gen_optim.step()
 
-    if step % 4000 == 0:
+    if step % 2000 == 0:
         print(f"""[ {resol} ][ {step}/{n_steps} ][ {alpha: .3f} ]""", end=" ")
         print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""", end=" ")
         print(f""" | Time: {get_elapsed_time(start_time)}""")
