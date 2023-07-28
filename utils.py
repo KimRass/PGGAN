@@ -38,10 +38,6 @@ def get_device():
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print(f"""Using {torch.cuda.device_count()} GPU(s).""")
-        # if torch.cuda.device_count() > 1:
-        #     print(f"""Using {torch.cuda.device_count()} GPUs.""")
-        # else:
-        #     print("Using GPU.")
     else:
         device = torch.device("cpu")
         print("Using CPU.")

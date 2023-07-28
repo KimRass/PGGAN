@@ -3,6 +3,7 @@
 
 import torch
 import torch.nn as nn
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader
@@ -72,12 +73,10 @@ def get_alpha(step, n_steps, trans_phase):
 
 
 gen = Generator()
-gen = nn.DataParallel(gen)
-gen = gen.to(DEVICE)
+gen = nn.DataParallel(gen).to(DEVICE)
 
 disc = Discriminator()
-disc = nn.DataParallel(disc)
-disc = disc.to(DEVICE)
+disc = nn.DataParallel(disc).to(DEVICE)
 
 # "We train the networks using Adam with $\alpha = 0.001$, $\beta_{1} = 0$, $\beta_{2} = 0.99$,
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
