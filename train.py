@@ -127,6 +127,7 @@ n_steps = get_n_steps(batch_size)
 
 # trans_phase = True
 # step = 26000
+trans_phase = False
 step = 0
 start_time = time()
 while True:
