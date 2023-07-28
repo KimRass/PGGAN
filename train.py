@@ -22,6 +22,8 @@ from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
+global AUTOCAST
+
 # DATA_DIR = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
