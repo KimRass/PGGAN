@@ -119,7 +119,7 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-ckpt_path = CKPT_DIR/"resol_32_iter_26000.pth"
+ckpt_path = CKPT_DIR/"transition_phase_resol_32_iter_24000.pth"
 gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
 resol_idx = 3
@@ -192,7 +192,7 @@ while True:
             fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
         )
         grid = resize_by_repeating_pixels(grid, resol=resol)
-        phase = "transition_phase_" if trans_phase else ""
+        phase = "transition_" if trans_phase else ""
         save_image(
             grid, path=SAVE_DIR/f"""{phase}resol_{resol}_step_{step}.jpg"""
         )
