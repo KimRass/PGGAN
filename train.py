@@ -2,6 +2,7 @@
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
 import torch
+import torch.nn as nn
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader
@@ -21,24 +22,17 @@ from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
-if torch.cuda.device_count() > 1:
-	print('Using ', torch.cuda.device_count(), 'GPUs')
-	D_net = nn.DataParallel(D_net)
-	G_net = nn.DataParallel(G_net)
-
 # DATA_DIR = "/Users/jongbeomkim/Documents/datasets/celebahq/"
 DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 SAVE_DIR = ROOT_DIR/"generated_images"
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
-# R2B = {4: 2, 8: 2, 16: 2, 32: 2, 64: 2, 128: 2, 256: 2, 512: 2, 1024: 2}
 # "We start with $4 \times 4$ resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
 N_IMAGES = 800_000
-# N_IMAGES = 20
 LAMBDA = 10
 EPS = 0.001
 DEVICE = get_device()
@@ -76,10 +70,8 @@ def get_alpha(step, n_steps, trans_phase):
     return alpha
 
 
-def get_disc_loss(disc, resol, alpha, real_image, fake_image, autocast=True):
-    with torch.autocast(
-        device_type=DEVICE.type, dtype=torch.float16
-    ) if autocast else nullcontext():
+def get_disc_loss(disc, resol, alpha, real_image, fake_image):
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
         real_pred = disc(real_image, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
@@ -97,17 +89,19 @@ def get_disc_loss(disc, resol, alpha, real_image, fake_image, autocast=True):
     return disc_loss
 
 
-def get_gen_loss(disc, fake_image, autocast=True):
-    with torch.autocast(
-        device_type=DEVICE.type, dtype=torch.float16
-    ) if autocast else nullcontext():
+def get_gen_loss(disc, fake_image):
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
         fake_pred = disc(fake_image, resol=resol, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
     return gen_loss
 
+gen = Generator()
+gen = nn.DataParallel(gen)
+gen = gen.to(DEVICE)
 
-gen = Generator().to(DEVICE)
-disc = Discriminator().to(DEVICE)
+disc = Discriminator()
+disc = nn.DataParallel(disc)
+disc = disc.to(DEVICE)
 
 # "We train the networks using Adam with $\alpha = 0.001$, $\beta_{1} = 0$, $\beta_{2} = 0.99$,
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
@@ -119,8 +113,8 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-ckpt_path = CKPT_DIR/"transition_phase_resol_32_step24000.pth"
-gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+# ckpt_path = CKPT_DIR/"transition_phase_resol_32_step24000.pth"
+# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
 resol_idx = 3
 resol = RESOLS[resol_idx]
@@ -131,8 +125,9 @@ dl = DataLoader(
 )
 n_steps = get_n_steps(batch_size)
 
-trans_phase = True
-step = 26000
+# trans_phase = True
+# step = 26000
+step = 0
 start_time = time()
 while True:
     real_image = next(iter(dl)).to(DEVICE)
@@ -142,24 +137,20 @@ while True:
 
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
     noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-    with torch.autocast(
-        device_type=DEVICE.type, dtype=torch.float16
-    ) if AUTOCAST else nullcontext():
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
         fake_image = gen(noise, resol=resol, alpha=alpha)
 
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
     disc_optim.zero_grad()
-
     disc_loss = get_disc_loss(
         disc=disc,
         resol=resol,
         alpha=alpha,
         real_image=real_image,
         fake_image=fake_image,
-        autocast=AUTOCAST,
+        AUTOCAST=AUTOCAST,
     )
-
     if AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
@@ -170,8 +161,7 @@ while True:
 
     ### Optimize G.
     gen_optim.zero_grad()
-
-    gen_loss = get_gen_loss(disc=disc, fake_image=fake_image, autocast=AUTOCAST)
+    gen_loss = get_gen_loss(disc=disc, fake_image=fake_image)
     if AUTOCAST:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
@@ -182,11 +172,10 @@ while True:
 
     if step % 1000 == 0:
         print(f"""[ {resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
-        print(f"""G loss: {gen_loss.item(): .6f} | D loss: {disc_loss.item(): .6f}""", end=" ")
+        print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
-    if step % 4000 == 0:
         fake_image = fake_image.detach().cpu()
         grid = batched_image_to_grid(
             fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
@@ -197,6 +186,7 @@ while True:
             grid, path=SAVE_DIR/f"""{phase}resol_{resol}_step_{step}.jpg"""
         )
 
+    if step % 4000 == 0:
         save_parameters(
             model=gen,
             save_path=CKPT_DIR/f"""{phase}resol_{resol}_step_{step}.pth"""
