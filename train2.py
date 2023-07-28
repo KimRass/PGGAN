@@ -132,7 +132,7 @@ trans_phase = True
 step = 0
 start_time = time()
 while True:
-    real_image = next(iter(dl))
+    real_image = next(iter(dl)).to(DEVICE)
 
     step += 1
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
