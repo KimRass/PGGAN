@@ -170,7 +170,7 @@ while True:
             grid, path=SAVE_DIR/f"""{phase}resol_{resol}_step_{step}.jpg"""
         )
 
-    if step % 4000 == 0:
+    if step % 4000 == 0 or step == n_steps:
         save_parameters(
             model=gen,
             save_path=CKPT_DIR/f"""{phase}resol_{resol}_step_{step}.pth"""
