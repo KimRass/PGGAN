@@ -1,12 +1,12 @@
 # References:
     # https://github.com/nashory/pggan-pytorch/blob/master/network.py
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/model.py
-    # https://personal-record.onrender.com/post/equalized-lr/
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import math
 
 from utils import print_number_of_parameters
 
@@ -144,7 +144,7 @@ class UpsampleBlock(nn.Module):
         return x
 
 
-class Generator(nn.Module): # 23,074,498 ("23.1M") parameters in total.
+class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
     def __init__(self):
         super().__init__()
 
@@ -159,65 +159,33 @@ class Generator(nn.Module): # 23,074,498 ("23.1M") parameters in total.
         self.block9 = UpsampleBlock(32, 16)
 
         # "The last Conv $1 \times 1$ layer of the generator corresponds to the 'toRGB' block."
-        self.to_rgb_512 = ToRGB(512)
-        self.to_rgb_256 = ToRGB(256)
-        self.to_rgb_128 = ToRGB(128)
-        self.to_rgb_64 = ToRGB(64)
-        self.to_rgb_32 = ToRGB(32)
-        self.to_rgb_16 = ToRGB(16)
-
-    def _fade_in(self, x, block, alpha):
-        skip = x.clone()
-        skip = block(skip)
-        skip = eval(f"""self.to_rgb_{skip.shape[1]}""")(skip)
-
-        x = _double(x)
-        x = eval(f"""self.to_rgb_{x.shape[1]}""")(x)
-        return (1 - alpha) * x + alpha * skip
+        self.to_rgb1 = ToRGB(512)
+        self.to_rgb2 = ToRGB(512)
+        self.to_rgb3 = ToRGB(512)
+        self.to_rgb4 = ToRGB(512)
+        self.to_rgb5 = ToRGB(256)
+        self.to_rgb6 = ToRGB(128)
+        self.to_rgb7 = ToRGB(64)
+        self.to_rgb8 = ToRGB(32)
+        self.to_rgb9 = ToRGB(16)
 
     def forward(self, x, resol, alpha):
-        x = self.block1(x) # `(b, 512, 4, 4)`
         if resol == 4:
-            x = self.to_rgb_512(x)
-            return x
-        elif resol == 8:
-            x = self._fade_in(x=x, block=self.block2, alpha=alpha)
-            return x
-        if resol >= 16:
-            x = self.block2(x) # `(b, 512, 8, 8)`
-            if resol == 16:
-                x = self._fade_in(x=x, block=self.block3, alpha=alpha)
-                return x
-        if resol >= 32:
-            x = self.block3(x) # `(b, 512, 16, 16)`
-            if resol == 32:
-                x = self._fade_in(x=x, block=self.block4, alpha=alpha)
-                return x
-        if resol >= 64:
-            x = self.block4(x) # `(b, 512, 32, 32)`
-            if resol == 64:
-                x = self._fade_in(x=x, block=self.block5, alpha=alpha)
-                return x
-        if resol >= 128:
-            x = self.block5(x) # `(b, 256, 64, 64)`
-            if resol == 128:
-                x = self._fade_in(x=x, block=self.block6, alpha=alpha)
-                return x
-        if resol >= 256:
-            x = self.block6(x) # `(b, 128, 128, 128)`
-            if resol == 256:
-                x = self._fade_in(x=x, block=self.block7, alpha=alpha)
-                return x
-        if resol >= 512:
-            x = self.block7(x) # `(b, 64, 256, 256)`
-            if resol == 512:
-                x = self._fade_in(x=x, block=self.block8, alpha=alpha)
-                return x
-        if resol >= 1024:
-            x = self.block8(x) # `(b, 32, 512, 512)`
-            if resol == 1024:
-                x = self._fade_in(x=x, block=self.block9, alpha=alpha)
-                return x
+            x = self.block1(x)
+            x = self.to_rgb1(x)
+        else:
+            depth = int(math.log2(resol)) - 1
+            for d in range(1, depth):
+                x = eval(f"""self.block{d}""")(x)
+            skip = x.clone()
+            skip = eval(f"""self.block{depth}""")(skip)
+            skip = eval(f"""self.to_rgb{depth}""")(skip)
+
+            x = _double(x)
+            x = eval(f"""self.to_rgb{depth - d}""")(x)
+
+            x = (1 - alpha) * x + alpha * skip
+        return x
 
 
 # "'$0.5\times$' refer to halving the image resolution using nearest neighbor average pooling."
@@ -270,72 +238,47 @@ class DownsampleBlock(nn.Module):
         return x
 
 
-class Discriminator(nn.Module): # 25,438,593 parameters in total.
+class Discriminator(nn.Module): # 25,444,737 parameters in total.
     def __init__(self):
         super().__init__()
 
-        self.block1 = DownsampleBlock(16, 32)
-        self.block2 = DownsampleBlock(32, 64)
-        self.block3 = DownsampleBlock(64, 128)
-        self.block4 = DownsampleBlock(128, 256)
+        self.block1 = DownsampleBlock(512, 512, downsample=False)
+        self.block2 = DownsampleBlock(512, 512)
+        self.block7 = DownsampleBlock(64, 128)
+        self.block4 = DownsampleBlock(512, 512)
         self.block5 = DownsampleBlock(256, 512)
-        self.block6 = DownsampleBlock(512, 512)
-        self.block7 = DownsampleBlock(512, 512)
-        self.block8 = DownsampleBlock(512, 512)
-        self.block9 = DownsampleBlock(512, 512, downsample=False)
+        self.block6 = DownsampleBlock(128, 256)
+        self.block8 = DownsampleBlock(32, 64)
+        self.block3 = DownsampleBlock(512, 512)
+        self.block9 = DownsampleBlock(16, 32)
 
-        self.from_rgb_512 = FromRGB(512)
-        self.from_rgb_256 = FromRGB(256)
-        self.from_rgb_128 = FromRGB(128)
-        self.from_rgb_64 = FromRGB(64)
-        self.from_rgb_32 = FromRGB(32)
-        self.from_rgb_16 = FromRGB(16)
-
-    def _fade_in(self, x, block, alpha):
-        skip = x.clone()
-        skip = eval(f"""self.from_rgb_{block.in_channels}""")(skip)
-        skip = block(skip)
-
-        x = _half(x)
-        x = eval(f"""self.from_rgb_{skip.shape[1]}""")(x)
-        return (1 - alpha) * x + alpha * skip
+        self.from_rgb1 = FromRGB(512)
+        self.from_rgb2 = FromRGB(512)
+        self.from_rgb3 = FromRGB(512)
+        self.from_rgb4 = FromRGB(512)
+        self.from_rgb5 = FromRGB(256)
+        self.from_rgb6 = FromRGB(128)
+        self.from_rgb7 = FromRGB(64)
+        self.from_rgb8 = FromRGB(32)
+        self.from_rgb9 = FromRGB(16)
 
     def forward(self, x, resol, alpha):
-        if resol >= 1024:
-            if resol == 1024:
-                # "The first Conv $1 \times 1$ layer of the discriminator similarly corresponds to 'fromRGB'."
-                x = self._fade_in(x=x, block=self.block1, alpha=alpha)
-            x = self.block2(x) # `(b, 64, 256, 256)`
-        if resol >= 512:
-            if resol == 512:
-                x = self._fade_in(x=x, block=self.block2, alpha=alpha)
-            x = self.block3(x) # `(b, 128, 128, 128)`
-        if resol >= 256:
-            if resol == 256:
-                x = self._fade_in(x=x, block=self.block3, alpha=alpha)
-            x = self.block4(x) # `(b, 256, 64, 64)`
-        if resol >= 128:
-            if resol == 128:
-                x = self._fade_in(x=x, block=self.block4, alpha=alpha)
-            x = self.block5(x) # `(b, 512, 32, 32)`
-        if resol >= 64:
-            if resol == 64:
-                x = self._fade_in(x=x, block=self.block5, alpha=alpha)
-            x = self.block6(x) # `(b, 512, 16, 16)`
-        if resol >= 32:
-            if resol == 32:
-                x = self._fade_in(x=x, block=self.block6, alpha=alpha)
-            x = self.block7(x) # `(b, 512, 8, 8)`
-        if resol >= 16:
-            if resol == 16:
-                x = self._fade_in(x=x, block=self.block7, alpha=alpha)
-            x = self.block8(x) # `(b, 512, 4, 4)`
-        if resol == 8:
-            x = self._fade_in(x=x, block=self.block8, alpha=alpha)
         if resol == 4:
-            x = self.from_rgb_512(x)
+            x = self.from_rgb1(x)
+            x = self.block1(x)
+        else:
+            depth = int(math.log2(resol)) - 1
 
-        x = self.block9(x) # `(b, 1, 1, 1)`
+            skip = x.clone()
+            skip = eval(f"""self.from_rgb{depth}""")(skip)
+            skip = eval(f"""self.block{depth}""")(skip)
+
+            x = _half(x)
+            x = eval(f"""self.from_rgb{depth - 1}""")(x)
+            
+            x = (1 - alpha) * x + alpha * skip
+            for d in range(depth - 1, 0, -1):
+                x = eval(f"""self.block{d}""")(x)
         return x
 
 
@@ -343,8 +286,9 @@ if __name__ == "__main__":
     BATCH_SIZE = 2
     gen = Generator()
     x = torch.randn(BATCH_SIZE, 512, 1, 1)
-    gen(x, resol=4, alpha=0.7).shape
-    # print_number_of_parameters(gen)
+    out = gen(x, resol=1204, alpha=0.7)
+    out.shape
+    print_number_of_parameters(gen)
     # for p in disc.parameters():
     #     p.shape
 
@@ -352,6 +296,6 @@ if __name__ == "__main__":
     alpha = 0
     resol = 1024
     x = torch.randn((BATCH_SIZE, 3, resol, resol))
+    print_number_of_parameters(disc)
     disc(x, resol=resol, alpha=alpha).shape
     disc(x, resol=resol, alpha=alpha)
-    # print_number_of_parameters(disc)

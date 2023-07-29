@@ -24,8 +24,7 @@ from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
 # DATA_DIR = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-# DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
-DATA_DIR = "/home/user/cv/celebahq/celeba_hq"
+DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 SAVE_DIR = ROOT_DIR/"generated_images"
@@ -88,10 +87,12 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-ckpt_path = CKPT_DIR/"resol_16_step_8000.pth"
-gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+# ckpt_path = CKPT_DIR/"resol_16_step_8000.pth"
+# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
-resol_idx = 2
+resol_idx = 0
+step = 0
+trans_phase = False
 resol = RESOLS[resol_idx]
 ds = CelebAHQDataset(data_dir=DATA_DIR, split="train", resol=resol)
 batch_size = get_batch_size(resol)
@@ -100,8 +101,6 @@ dl = DataLoader(
 )
 n_steps = get_n_steps(batch_size)
 
-trans_phase = False
-step = 8000
 start_time = time()
 while True:
     real_image = next(iter(dl)).to(DEVICE)
