@@ -4,10 +4,10 @@ import numpy as np
 from time import time
 from datetime import timedelta
 import torch
+import torchvision.transforms as T
 from torchvision.utils import make_grid
 import numpy as np
 from tqdm.auto import tqdm
-import torchvision.transforms as T
 
 
 def _to_pil(img):

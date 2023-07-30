@@ -160,15 +160,17 @@ while True:
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
-        fake_image = fake_image.detach().cpu()
-        grid = batched_image_to_grid(
-            fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
-        )
-        grid = resize_by_repeating_pixels(grid, resol=resol)
-        phase = "transition_" if trans_phase else ""
-        save_image(
-            grid, path=SAVE_DIR/f"""{phase}resol_{resol}_step_{step}.jpg"""
-        )
+        with torch.no_grad():
+            fake_image = gen(noise, resol=resol, alpha=alpha)
+            fake_image = fake_image.detach().cpu()
+            grid = batched_image_to_grid(
+                fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
+            )
+            grid = resize_by_repeating_pixels(grid, resol=resol)
+            phase = "transition_" if trans_phase else ""
+            save_image(
+                grid, path=SAVE_DIR/f"""{phase}resol_{resol}_step_{step}.jpg"""
+            )
 
     if step % 4000 == 0 or step == n_steps:
         save_parameters(
