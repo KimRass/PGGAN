@@ -182,7 +182,7 @@ class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
             skip = eval(f"""self.to_rgb{depth}""")(skip)
 
             x = _double(x)
-            x = eval(f"""self.to_rgb{depth - d}""")(x)
+            x = eval(f"""self.to_rgb{depth - 1}""")(x)
 
             x = (1 - alpha) * x + alpha * skip
         return x
@@ -284,18 +284,14 @@ class Discriminator(nn.Module): # 25,444,737 parameters in total.
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
-    gen = Generator()
-    x = torch.randn(BATCH_SIZE, 512, 1, 1)
-    out = gen(x, resol=1204, alpha=0.7)
-    out.shape
-    print_number_of_parameters(gen)
-    # for p in disc.parameters():
-    #     p.shape
+    for resol in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
+        alpha = 0.5
+        gen = Generator()
+        x = torch.randn(BATCH_SIZE, 512, 1, 1)
+        out = gen(x, resol=resol, alpha=alpha)
+        out.shape
 
-    disc = Discriminator()
-    alpha = 0
-    resol = 1024
-    x = torch.randn((BATCH_SIZE, 3, resol, resol))
-    print_number_of_parameters(disc)
-    disc(x, resol=resol, alpha=alpha).shape
-    disc(x, resol=resol, alpha=alpha)
+        disc = Discriminator()
+        x = torch.randn((BATCH_SIZE, 3, resol, resol))
+        out = disc(x, resol=resol, alpha=alpha)
+        out.shape
