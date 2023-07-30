@@ -167,16 +167,18 @@ while True:
                 fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
-            phase = "transition_" if trans_phase else ""
-            save_image(
-                grid, path=SAVE_DIR/f"""{phase}resol_{resol}_step_{step}.jpg"""
-            )
+            if trans_phase:
+                save_path = SAVE_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.jpg"""
+            else:
+                save_path = SAVE_DIR/f"""{resol}×{resol}_{step}.jpg"""
+            save_image(grid, path=save_path)
 
     if step % 4000 == 0 or step == n_steps:
-        save_parameters(
-            model=gen,
-            save_path=CKPT_DIR/f"""{phase}resol_{resol}_step_{step}.pth"""
-        )
+        if trans_phase:
+            save_path = SAVE_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
+        else:
+            save_path = SAVE_DIR/f"""{resol}×{resol}_{step}.pth"""
+        save_parameters(model=gen, save_path=save_path)
 
     if step >= n_steps:
         if not trans_phase:
