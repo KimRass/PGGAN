@@ -74,14 +74,12 @@ def get_alpha(step, n_steps, trans_phase):
     return alpha
 
 
-def get_data_iterator(split, batch_size, resol):
+def get_dataloader(split, batch_size, resol):
     ds = CelebAHQDataset(data_dir=DATA_DIR, split=split, resol=resol)
     dl = DataLoader(
         ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True
     )
-    print(len(dl))
-    di = iter(dl)
-    return di
+    return dl
 
 
 gen = Generator()
@@ -107,7 +105,8 @@ resol_idx = 0
 trans_phase = False
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
-train_di = get_data_iterator(split="train", batch_size=batch_size, resol=resol)
+train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
+train_di = iter(train_dl)
 
 n_steps = get_n_steps(batch_size)
 disc_running_loss = 0
@@ -117,9 +116,11 @@ start_time = time()
 while True:
     step += 1
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
-    print(step)
 
-    real_image = next(train_di).to(DEVICE)
+    try:
+        real_image = next(train_dl).to(DEVICE)
+    except StopIteration:
+        train_di = iter(train_dl)
 
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
@@ -177,7 +178,7 @@ while True:
 
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
         # print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
-        print(f"""D loss (1st and 2nd term): {disc_running_loss:.6f} |""", end=" ")
+        print(f"""D loss: {disc_running_loss:.6f} |""", end=" ")
         print(f"""G loss: {gen_running_loss:.6f}""", end=" ")
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()
@@ -211,7 +212,7 @@ while True:
             resol = RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
             n_steps = get_n_steps(batch_size)
-        train_di = get_data_iterator(split="train", batch_size=batch_size, resol=resol)
+        train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
         trans_phase = not trans_phase
 
         step = 0
