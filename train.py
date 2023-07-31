@@ -79,6 +79,7 @@ def get_data_iterator(split, batch_size, resol):
     dl = DataLoader(
         ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True
     )
+    print(len(dl))
     di = iter(dl)
     return di
 
@@ -103,15 +104,15 @@ disc_scaler = GradScaler()
 # gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
 resol_idx = 0
-step = 0
 trans_phase = False
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
-train_di = get_data_iterator(split="train", batch_size=batch_size, resol=4)
+train_di = get_data_iterator(split="train", batch_size=batch_size, resol=resol)
 
 n_steps = get_n_steps(batch_size)
 disc_running_loss = 0
 gen_running_loss = 0
+step = 0
 start_time = time()
 while True:
     real_image = next(train_di).to(DEVICE)
@@ -208,8 +209,8 @@ while True:
             resol_idx += 1
             resol = RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
-            train_di = get_data_iterator(split="train", batch_size=batch_size, resol=4)
             n_steps = get_n_steps(batch_size)
+        train_di = get_data_iterator(split="train", batch_size=batch_size, resol=resol)
         trans_phase = not trans_phase
 
         step = 0
