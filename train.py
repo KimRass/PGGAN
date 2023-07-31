@@ -106,7 +106,7 @@ trans_phase = False
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
-train_di = iter(train_dl)
+train_di = iter(train_di)
 
 n_steps = get_n_steps(batch_size)
 disc_running_loss = 0
@@ -118,9 +118,9 @@ while True:
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
 
     try:
-        real_image = next(train_dl).to(DEVICE)
+        real_image = next(train_di).to(DEVICE)
     except StopIteration:
-        train_di = iter(train_dl)
+        train_di = iter(train_di)
 
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
@@ -212,7 +212,8 @@ while True:
             resol = RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
             n_steps = get_n_steps(batch_size)
-        train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
+            train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
+        train_di = iter(train_dl)
         trans_phase = not trans_phase
 
         step = 0
