@@ -175,8 +175,8 @@ while True:
 
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
         # print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
-        print(f"""D loss (1st and 2nd term): {disc_running_loss.item():.6f} |""", end=" ")
-        print(f"""G loss: {gen_running_loss.item():.6f}""", end=" ")
+        print(f"""D loss (1st and 2nd term): {disc_running_loss:.6f} |""", end=" ")
+        print(f"""G loss: {gen_running_loss:.6f}""", end=" ")
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
