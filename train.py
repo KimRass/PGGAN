@@ -189,7 +189,7 @@ while True:
             if trans_phase:
                 save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}/{step}.jpg"""
             else:
-                save_path = IMG_DIR/f"""{resol}×{resol}_{step}.jpg"""
+                save_path = IMG_DIR/f"""{resol}×{resol}/{step}.jpg"""
             save_image(grid, path=save_path)
 
         disc_running_loss = 0
