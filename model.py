@@ -144,6 +144,11 @@ class UpsampleBlock(nn.Module):
         return x
 
 
+def _get_depth(resol):
+    depth = int(math.log2(resol)) - 1
+    return depth
+
+
 class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
     def __init__(self):
         super().__init__()
@@ -174,17 +179,18 @@ class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
             x = self.block1(x)
             x = self.to_rgb1(x)
         else:
-            depth = int(math.log2(resol)) - 1
+            depth = _get_depth(resol)
             for d in range(1, depth):
                 x = eval(f"""self.block{d}""")(x)
+
             skip = x.clone()
-            skip = eval(f"""self.block{depth}""")(skip)
-            skip = eval(f"""self.to_rgb{depth}""")(skip)
+            skip = _double(skip)
+            skip = eval(f"""self.to_rgb{depth - 1}""")(skip)
 
-            x = _double(x)
-            x = eval(f"""self.to_rgb{depth - 1}""")(x)
+            x = eval(f"""self.block{depth}""")(x)
+            x = eval(f"""self.to_rgb{depth}""")(x)
 
-            x = (1 - alpha) * x + alpha * skip
+            x = (1 - alpha) * skip + alpha * x
         return x
 
 
@@ -267,16 +273,17 @@ class Discriminator(nn.Module): # 25,444,737 parameters in total.
             x = self.from_rgb1(x)
             x = self.block1(x)
         else:
-            depth = int(math.log2(resol)) - 1
+            depth = _get_depth(resol)
 
             skip = x.clone()
-            skip = eval(f"""self.from_rgb{depth}""")(skip)
-            skip = eval(f"""self.block{depth}""")(skip)
-
-            x = _half(x)
-            x = eval(f"""self.from_rgb{depth - 1}""")(x)
+            skip = _half(skip)
+            skip = eval(f"""self.from_rgb{depth - 1}""")(skip)
             
-            x = (1 - alpha) * x + alpha * skip
+            x = eval(f"""self.from_rgb{depth}""")(x)
+            x = eval(f"""self.block{depth}""")(x)
+
+            x = (1 - alpha) * skip + alpha * x
+
             for d in range(depth - 1, 0, -1):
                 x = eval(f"""self.block{d}""")(x)
         return x

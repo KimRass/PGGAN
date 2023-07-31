@@ -27,7 +27,7 @@ from loss import get_gradient_penalty
 DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
-SAVE_DIR = ROOT_DIR/"generated_images"
+IMG_DIR = ROOT_DIR/"generated_images"
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # "We start with $4 \times 4$ resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
@@ -168,16 +168,16 @@ while True:
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
             if trans_phase:
-                save_path = SAVE_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.jpg"""
+                save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.jpg"""
             else:
-                save_path = SAVE_DIR/f"""{resol}×{resol}_{step}.jpg"""
+                save_path = IMG_DIR/f"""{resol}×{resol}_{step}.jpg"""
             save_image(grid, path=save_path)
 
     if step % 4000 == 0 or step == n_steps:
         if trans_phase:
-            save_path = SAVE_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
+            save_path = CKPT_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
-            save_path = SAVE_DIR/f"""{resol}×{resol}_{step}.pth"""
+            save_path = CKPT_DIR/f"""{resol}×{resol}_{step}.pth"""
         save_parameters(model=gen, save_path=save_path)
 
     if step >= n_steps:
