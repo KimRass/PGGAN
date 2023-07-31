@@ -28,6 +28,10 @@ DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 IMG_DIR = ROOT_DIR/"generated_images"
+
+IMG_STEPS = 1000
+CKPT_STEPS = 4000
+
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
@@ -38,10 +42,9 @@ LAMBDA = 10
 EPS = 0.001
 DEVICE = get_device()
 RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
-# N_WORKERS = 4
-N_WORKERS = 0
-# AUTOCAST = False
+N_WORKERS = 4
 AUTOCAST = True
+
 LR = 0.001
 BETA1 = 0
 BETA2 = 0.99
@@ -71,6 +74,15 @@ def get_alpha(step, n_steps, trans_phase):
     return alpha
 
 
+def get_data_iterator(split, batch_size, resol):
+    ds = CelebAHQDataset(data_dir=DATA_DIR, split=split, resol=resol)
+    dl = DataLoader(
+        ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True
+    )
+    di = iter(dl)
+    return di
+
+
 gen = Generator()
 gen = nn.DataParallel(gen).to(DEVICE)
 
@@ -94,16 +106,15 @@ resol_idx = 0
 step = 0
 trans_phase = False
 resol = RESOLS[resol_idx]
-ds = CelebAHQDataset(data_dir=DATA_DIR, split="train", resol=resol)
 batch_size = get_batch_size(resol)
-dl = DataLoader(
-    ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True
-)
-n_steps = get_n_steps(batch_size)
+train_di = get_data_iterator(split="train", batch_size=batch_size, resol=4)
 
+n_steps = get_n_steps(batch_size)
+disc_running_loss = 0
+gen_running_loss = 0
 start_time = time()
 while True:
-    real_image = next(iter(dl)).to(DEVICE)
+    real_image = next(train_di).to(DEVICE)
 
     step += 1
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
@@ -119,17 +130,18 @@ while True:
         fake_image = gen(noise, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
-    disc_loss = -torch.mean(real_pred) + torch.mean(fake_pred)
+    disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
     gp = get_gradient_penalty(
         disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
     )
-    disc_loss += LAMBDA * gp
+    disc_loss2 = LAMBDA * gp
     # "We use the WGAN-GP loss."
     # "We introduce a fourth term into the discriminator loss with an extremely small weight
     # to keep the discriminator output from drifting too far away from zero. We set
     # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
     # where $\epsilon_{drift} = 0.001$."
-    disc_loss += EPS * torch.mean(real_pred ** 2)
+    disc_loss3 = EPS * torch.mean(real_pred ** 2)
+    disc_loss = disc_loss1 + disc_loss2 + disc_loss3
 
     if AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
@@ -154,9 +166,16 @@ while True:
         gen_loss.backward()
         gen_optim.step()
 
-    if step % 1000 == 0:
+    disc_running_loss += disc_loss1.item()
+    gen_running_loss += gen_loss.item()
+
+    if (step % IMG_STEPS == 0) or (step == n_steps):
+        disc_running_loss /= IMG_STEPS
+
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
-        print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
+        # print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
+        print(f"""D loss (1st and 2nd term): {disc_running_loss.item():.6f} |""", end=" ")
+        print(f"""G loss: {gen_running_loss.item():.6f}""", end=" ")
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
@@ -168,12 +187,14 @@ while True:
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
             if trans_phase:
-                save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.jpg"""
+                save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}/{step}.jpg"""
             else:
                 save_path = IMG_DIR/f"""{resol}×{resol}_{step}.jpg"""
             save_image(grid, path=save_path)
 
-    if step % 4000 == 0 or step == n_steps:
+        disc_running_loss = 0
+
+    if (step % CKPT_STEPS == 0) or (step == n_steps):
         if trans_phase:
             save_path = CKPT_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
@@ -184,13 +205,9 @@ while True:
         if not trans_phase:
             resol_idx += 1
             resol = RESOLS[resol_idx]
+            batch_size = get_batch_size(resol)
+            train_di = get_data_iterator(split="train", batch_size=batch_size, resol=4)
+            n_steps = get_n_steps(batch_size)
         trans_phase = not trans_phase
-
-        ds = CelebAHQDataset(data_dir=DATA_DIR, split="train", resol=resol)
-        batch_size = get_batch_size(resol)
-        n_steps = get_n_steps(batch_size)
-        dl = DataLoader(
-            ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True
-        )
 
         step = 0
