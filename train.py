@@ -179,15 +179,16 @@ while True:
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
         # print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
         print(f"""D loss: {disc_running_loss:.6f} |""", end=" ")
-        print(f"""G loss: {gen_running_loss:.6f}""", end=" ")
-        print(f""" | Time: {get_elapsed_time(start_time)}""")
+        print(f"""G loss: {gen_running_loss:.6f} |""", end=" ")
+        print(f"""Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
         with torch.no_grad():
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
-                fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
+                # fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
+                fake_image[: 9, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
             if trans_phase:
