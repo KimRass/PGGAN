@@ -29,7 +29,7 @@ ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 IMG_DIR = ROOT_DIR/"generated_images"
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
-# "We start with $4 \times 4$ resolution and train the networks until we have shown the discriminator
+# "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
@@ -155,7 +155,7 @@ while True:
         gen_optim.step()
 
     if step % 1000 == 0:
-        print(f"""[ {resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
+        print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
         print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
         print(f""" | Time: {get_elapsed_time(start_time)}""")
         start_time = time()

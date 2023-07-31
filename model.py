@@ -1,5 +1,4 @@
 # References:
-    # https://github.com/nashory/pggan-pytorch/blob/master/network.py
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/model.py
 
 import torch
@@ -69,7 +68,7 @@ class EqualLRConv2d(nn.Module):
         return x
 
 
-# "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses $1 \times 1$ convolutions."
+# "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses 1×1 convolutions."
 class ToRGB(nn.Module):
     def __init__(self, in_channels, leakiness=LEAKINESS):
         super().__init__()
@@ -84,7 +83,7 @@ class ToRGB(nn.Module):
         return x
 
 
-# "The `fromRGB` does the reverse of `toRGB`. it uses $1 \times 1$ convolutions."
+# "The `fromRGB` does the reverse of `toRGB`. it uses 1×1 convolutions."
 class FromRGB(nn.Module):
     def __init__(self, out_channels, leakiness=LEAKINESS):
         super().__init__()
@@ -109,7 +108,7 @@ def perform_pixel_norm(x, eps=1e-8):
     return x
 
 
-# "'$2\times$' refer to doubling the image resolution using nearest neighbor filtering."
+# "'2×' refer to doubling the image resolution using nearest neighbor filtering."
 def _double(x):
     return F.interpolate(x, scale_factor=2, mode="nearest")
 
@@ -135,7 +134,7 @@ class UpsampleBlock(nn.Module):
             x = _double(x)
         x = self.conv1(x)
         x = F.leaky_relu(x, negative_slope=self.leakiness)
-        # "We perform pixel-wise normalization of the feature vectors after each Conv $3 \times 3$ layer
+        # "We perform pixel-wise normalization of the feature vectors after each Conv 3×3 layer
         # in the generator."
         x = perform_pixel_norm(x)
         x = self.conv2(x)
@@ -163,7 +162,7 @@ class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
         self.block8 = UpsampleBlock(64, 32)
         self.block9 = UpsampleBlock(32, 16)
 
-        # "The last Conv $1 \times 1$ layer of the generator corresponds to the 'toRGB' block."
+        # "The last Conv 1×1 layer of the generator corresponds to the 'toRGB' block."
         self.to_rgb1 = ToRGB(512)
         self.to_rgb2 = ToRGB(512)
         self.to_rgb3 = ToRGB(512)
@@ -194,7 +193,7 @@ class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
         return x
 
 
-# "'$0.5\times$' refer to halving the image resolution using nearest neighbor average pooling."
+# "'0.5×' refer to halving the image resolution using nearest neighbor average pooling."
 def _half(x):
     return F.avg_pool2d(x, kernel_size=2, stride=2)
 
@@ -229,7 +228,7 @@ class DownsampleBlock(nn.Module):
     def forward(self, x):
         if not self.downsample:
             # "We inject the across-minibatch standard deviation as an additional feature map
-            # at $4 \times 4$ resolution toward the end of the discriminator."
+            # at 4×4 resolution toward the end of the discriminator."
             x = self.add_minibatch_std(x)
         x = self.conv1(x)
         x = F.leaky_relu(x, negative_slope=self.leakiness)
