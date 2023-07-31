@@ -171,6 +171,7 @@ while True:
 
     if (step % IMG_STEPS == 0) or (step == n_steps):
         disc_running_loss /= IMG_STEPS
+        gen_running_loss /= IMG_STEPS
 
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
         # print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
@@ -193,6 +194,7 @@ while True:
             save_image(grid, path=save_path)
 
         disc_running_loss = 0
+        gen_running_loss = 0
 
     if (step % CKPT_STEPS == 0) or (step == n_steps):
         if trans_phase:
