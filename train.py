@@ -115,10 +115,11 @@ gen_running_loss = 0
 step = 0
 start_time = time()
 while True:
-    real_image = next(train_di).to(DEVICE)
-
     step += 1
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
+    print(step)
+
+    real_image = next(train_di).to(DEVICE)
 
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
