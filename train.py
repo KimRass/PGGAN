@@ -106,7 +106,7 @@ trans_phase = False
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
-train_di = iter(train_di)
+train_di = iter(train_dl)
 
 n_steps = get_n_steps(batch_size)
 disc_running_loss = 0
