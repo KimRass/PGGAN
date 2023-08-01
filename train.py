@@ -109,11 +109,14 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-ckpt_path = CKPT_DIR/"32×32_32000.pth"
-gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+### Resume from checkpoint.
+# ckpt_path = CKPT_DIR/"32×32_32000.pth"
+# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
-resol_idx = 3
+resol_idx = 0
 trans_phase = False
+step = 0
+
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
 n_steps = get_n_steps(batch_size)
@@ -122,7 +125,6 @@ train_di = iter(train_dl)
 
 disc_running_loss = 0
 gen_running_loss = 0
-step = 32000
 start_time = time()
 while True:
     step += 1
