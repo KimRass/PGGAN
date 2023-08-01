@@ -212,10 +212,11 @@ while True:
 
     if ((resol not in [4, 8, 16]) and (step % CKPT_STEPS == 0)) or (step == n_steps):
         if trans_phase:
-            save_path = CKPT_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
+            filename = f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
-            save_path = CKPT_DIR/f"""{resol}×{resol}_{step}.pth"""
-        save_parameters(model=gen, save_path=save_path)
+            filename = f"""{resol}×{resol}_{step}.pth"""
+        save_parameters(model=disc, save_path=CKPT_DIR/"D"/filename)
+        save_parameters(model=gen, save_path=CKPT_DIR/"G"/filename)
 
     if step >= n_steps:
         if not trans_phase:
