@@ -98,10 +98,10 @@ disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
-# ckpt_path = CKPT_DIR/"resol_16_step_8000.pth"
-# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+ckpt_path = CKPT_DIR/"32×32_32000.pth"
+gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
 
-resol_idx = 0
+resol_idx = 3
 trans_phase = False
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
@@ -111,7 +111,7 @@ train_di = iter(train_dl)
 n_steps = get_n_steps(batch_size)
 disc_running_loss = 0
 gen_running_loss = 0
-step = 0
+step = 32000
 start_time = time()
 while True:
     step += 1
@@ -177,9 +177,8 @@ while True:
         gen_running_loss /= IMG_STEPS
 
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
-        # print(f"""G loss: {gen_loss.item():.6f} | D loss: {disc_loss.item():.6f}""", end=" ")
-        print(f"""D loss: {disc_running_loss:.6f} |""", end=" ")
-        print(f"""G loss: {gen_running_loss:.6f} |""", end=" ")
+        print(f"""D loss: {disc_running_loss:.4f} |""", end=" ")
+        print(f"""G loss: {gen_running_loss:.4f} |""", end=" ")
         print(f"""Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
@@ -187,7 +186,6 @@ while True:
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_image = fake_image.detach().cpu()
             grid = batched_image_to_grid(
-                # fake_image[: 3, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
                 fake_image[: 9, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
             )
             grid = resize_by_repeating_pixels(grid, resol=resol)
@@ -200,7 +198,7 @@ while True:
         disc_running_loss = 0
         gen_running_loss = 0
 
-    if (step % CKPT_STEPS == 0) or (step == n_steps):
+    if ((resol not in [4, 8, 16]) and (step % CKPT_STEPS == 0)) or (step == n_steps):
         if trans_phase:
             save_path = CKPT_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
