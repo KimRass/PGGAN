@@ -212,7 +212,8 @@ while True:
         disc_running_loss = 0
         gen_running_loss = 0
 
-    if ((resol not in [4, 8, 16]) and (step % CKPT_STEPS == 0)) or (step == n_steps):
+    # if ((resol not in [4, 8, 16]) and (step % CKPT_STEPS == 0)) or (step == n_steps):
+    if (step % CKPT_STEPS == 0) or (step == n_steps):
         if trans_phase:
             filename = f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
