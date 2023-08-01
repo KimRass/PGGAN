@@ -29,8 +29,8 @@ ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 IMG_DIR = ROOT_DIR/"generated_images"
 
-IMG_STEPS = 1000
-CKPT_STEPS = 4000
+N_IMG_STEPS = 1000
+N_CKPT_STEPS = 4000
 
 R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
@@ -186,9 +186,9 @@ while True:
     disc_running_loss += disc_loss1.item()
     gen_running_loss += gen_loss.item()
 
-    if (step % IMG_STEPS == 0) or (step == n_steps):
-        disc_running_loss /= IMG_STEPS
-        gen_running_loss /= IMG_STEPS
+    if (step % N_IMG_STEPS == 0) or (step == n_steps):
+        disc_running_loss /= N_IMG_STEPS
+        gen_running_loss /= N_IMG_STEPS
 
         print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
         print(f"""D loss: {disc_running_loss:.4f} |""", end=" ")
@@ -212,8 +212,7 @@ while True:
         disc_running_loss = 0
         gen_running_loss = 0
 
-    # if ((resol not in [4, 8, 16]) and (step % CKPT_STEPS == 0)) or (step == n_steps):
-    if (step % CKPT_STEPS == 0) or (step == n_steps):
+    if (step % N_CKPT_STEPS == 0) or (step == n_steps):
         if trans_phase:
             filename = f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
