@@ -82,11 +82,22 @@ def get_dataloader(split, batch_size, resol):
     return dl
 
 
+def freeze_model(model):
+    for p in model.parameters():
+        p.requires_grad = False
+
+
+def unfreeze_model(model):
+    for p in model.parameters():
+        p.requires_grad = True
+
+
 gen = Generator()
 gen = nn.DataParallel(gen).to(DEVICE)
 
 disc = Discriminator()
 disc = nn.DataParallel(disc).to(DEVICE)
+
 
 # "We train the networks using Adam with $\alpha = 0.001$, $\beta_{1} = 0$, $\beta_{2} = 0.99$,
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
@@ -105,10 +116,10 @@ resol_idx = 3
 trans_phase = False
 resol = RESOLS[resol_idx]
 batch_size = get_batch_size(resol)
+n_steps = get_n_steps(batch_size)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
 train_di = iter(train_dl)
 
-n_steps = get_n_steps(batch_size)
 disc_running_loss = 0
 gen_running_loss = 0
 step = 32000
@@ -120,7 +131,8 @@ while True:
     try:
         real_image = next(train_di).to(DEVICE)
     except StopIteration:
-        train_di = iter(train_di)
+        train_di = iter(train_dl)
+        real_image = next(train_di).to(DEVICE)
 
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
@@ -145,7 +157,6 @@ while True:
     # where $\epsilon_{drift} = 0.001$."
     disc_loss3 = EPS * torch.mean(real_pred ** 2)
     disc_loss = disc_loss1 + disc_loss2 + disc_loss3
-
     if AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
@@ -157,10 +168,10 @@ while True:
     ### Optimize G.
     gen_optim.zero_grad()
 
+    freeze_model(disc)
     with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
         fake_pred = disc(fake_image, resol=resol, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
-
     if AUTOCAST:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
@@ -168,6 +179,7 @@ while True:
     else:
         gen_loss.backward()
         gen_optim.step()
+    unfreeze_model(disc)
 
     disc_running_loss += disc_loss1.item()
     gen_running_loss += gen_loss.item()
