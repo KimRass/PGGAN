@@ -13,7 +13,7 @@ from contextlib import nullcontext
 
 from utils import (
     get_device,
-    save_parameters,
+    save_checkpoint,
     batched_image_to_grid,
     save_image,
     resize_by_repeating_pixels,
@@ -123,6 +123,7 @@ n_steps = get_n_steps(batch_size)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
 train_di = iter(train_dl)
 
+disc.train()
 disc_running_loss = 0
 gen_running_loss = 0
 start_time = time()
@@ -135,6 +136,8 @@ while True:
     except StopIteration:
         train_di = iter(train_dl)
         real_image = next(train_di).to(DEVICE)
+
+    gen.train()
 
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
@@ -196,6 +199,7 @@ while True:
         print(f"""Time: {get_elapsed_time(start_time)}""")
         start_time = time()
 
+        gen.eval()
         with torch.no_grad():
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_image = fake_image.detach().cpu()
@@ -217,8 +221,15 @@ while True:
             filename = f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
             filename = f"""{resol}×{resol}_{step}.pth"""
-        save_parameters(model=disc, save_path=CKPT_DIR/"D"/filename)
-        save_parameters(model=gen, save_path=CKPT_DIR/"G"/filename)
+        save_checkpoint(
+            resol=resol,
+            step=step,
+            disc=disc,
+            gen=gen,
+            disc_optim=disc_optim,
+            gen_optim=gen_optim,
+            save_path=CKPT_DIR/"G"/filename,
+        )
 
     if step >= n_steps:
         if not trans_phase:
