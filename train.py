@@ -31,15 +31,16 @@ IMG_DIR = ROOT_DIR/"generated_images"
 N_IMG_STEPS = 1000
 N_CKPT_STEPS = 4000
 
-# R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-# R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 10, 512: 6, 1024: 3} # In my case
-R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 9, 512: 6, 1024: 3} # In my case
+# RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
+# RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 10, 512: 6, 1024: 3} # In my case
+RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 9, 512: 6, 1024: 3} # In my case
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
-# N_IMAGES = 800_000
-N_IMAGES = 1_200_000
+# Not in the paper
+RESOL_N_IMAGES = {4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 1_600_000}
+
 LAMBDA = 10
 EPS = 0.001
 DEVICE = get_device()
@@ -56,20 +57,23 @@ EPS = 1e-8
 # the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
 # to avoid exceeding the available memory budget."
 def get_batch_size(resol):
-    return R2B[resol]
+    return RESOL_BATCH_SIZE[resol]
 
 
-def get_n_steps(batch_size):
-    n_steps = N_IMAGES // batch_size
+def get_n_images(resol):
+    return RESOL_N_IMAGES[resol]
+
+
+def get_n_steps(n_images, batch_size):
+    n_steps = n_images // batch_size
     return n_steps
 
 
-def get_alpha(step, n_steps, trans_phase):
+def get_alpha(step, n_steps):
     if trans_phase:
         # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
         # During the transition we treat the layers that operate on the higher resolution like a residual block,
         # whose weight increases linearly from 0 to 1."
-        n_steps = get_n_steps(batch_size)
         alpha = step / n_steps
     else:
         alpha = 1
@@ -94,12 +98,11 @@ def unfreeze_model(model):
         p.requires_grad = True
 
 
-gen = Generator()
-gen = nn.DataParallel(gen).to(DEVICE)
+gen = Generator().to(DEVICE)
+gen = nn.DataParallel(gen)
 
-disc = Discriminator()
-disc = nn.DataParallel(disc).to(DEVICE)
-
+disc = Discriminator().to(DEVICE)
+disc = nn.DataParallel(disc)
 
 # "We train the networks using Adam with $\alpha = 0.001$, $\beta_{1} = 0$, $\beta_{2} = 0.99$,
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
@@ -126,10 +129,11 @@ trans_phase = False
 # resol_idx = ckpt["resol_idx"]
 resol_idx = 5
 resol = RESOLS[resol_idx]
-print(f"""Resuming from resolution {resol} and step {step}. (Transition phase: {trans_phase})""")
+print(f"""Resuming from resolution {resol}×{resol} and step {step}. (Transition phase: {trans_phase})""")
 
 batch_size = get_batch_size(resol)
-n_steps = get_n_steps(batch_size)
+n_images = get_n_images(resol)
+n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
 train_di = iter(train_dl)
 
@@ -142,10 +146,11 @@ while True:
     alpha = get_alpha(step=step, n_steps=n_steps, trans_phase=trans_phase)
 
     try:
-        real_image = next(train_di).to(DEVICE)
+        real_image = next(train_di)
     except StopIteration:
         train_di = iter(train_dl)
-        real_image = next(train_di).to(DEVICE)
+        real_image = next(train_di)
+    real_image = real_image.to(DEVICE)
 
     gen.train()
 
@@ -244,7 +249,8 @@ while True:
             resol_idx += 1
             resol = RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
-            n_steps = get_n_steps(batch_size)
+            n_images = get_n_images(resol)
+            n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
             train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
         train_di = iter(train_dl)
         trans_phase = not trans_phase
