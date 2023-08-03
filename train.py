@@ -232,7 +232,7 @@ while True:
             gen=gen,
             disc_optim=disc_optim,
             gen_optim=gen_optim,
-            save_path=CKPT_DIR/"G"/filename,
+            save_path=CKPT_DIR/filename,
         )
 
     if step >= n_steps:
