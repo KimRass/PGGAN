@@ -33,7 +33,8 @@ N_IMG_STEPS = 1000
 N_CKPT_STEPS = 4000
 
 # R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 10, 512: 6, 1024: 3} # In my case
+# R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 10, 512: 6, 1024: 3} # In my case
+R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 8, 256: 10, 512: 6, 1024: 3} # In my case
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
@@ -117,8 +118,9 @@ gen.load_state_dict(torch.load(CKPT_DIR/"G/128×128_50000.pth", map_location=DEV
 resol_idx = 5
 trans_phase = False
 step = 0
-
 resol = RESOLS[resol_idx]
+print(f"""Resuming from resolution {resol} and step {step}. (Transition phase: {trans_phase}""")
+
 batch_size = get_batch_size(resol)
 n_steps = get_n_steps(batch_size)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
