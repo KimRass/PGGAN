@@ -113,7 +113,9 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
-ckpt = torch.load("/Users/jongbeomkim/Downloads/pretrained/128×128_20000.pth", map_location=DEVICE)
+ckpt = torch.load(
+    "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_20000.pth", map_location=DEVICE
+)
 disc.load_state_dict(ckpt["D"])
 gen.load_state_dict(ckpt["G"])
 disc_optim.load_state_dict(ckpt["D_optimizer"])
