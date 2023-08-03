@@ -111,8 +111,8 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
-disc.load_state_dict(torch.load(CKPT_DIR/"D/128×128/128×128_50000.pth", map_location=DEVICE))
-gen.load_state_dict(torch.load(CKPT_DIR/"G/128×128/128×128_50000.pth", map_location=DEVICE))
+disc.load_state_dict(torch.load(CKPT_DIR/"D/128×128_50000.pth", map_location=DEVICE))
+gen.load_state_dict(torch.load(CKPT_DIR/"G/128×128_50000.pth", map_location=DEVICE))
 
 resol_idx = 5
 trans_phase = False
