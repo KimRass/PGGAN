@@ -39,7 +39,8 @@ R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 9, 512: 6, 1024: 3} # 
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
-N_IMAGES = 800_000
+# N_IMAGES = 800_000
+N_IMAGES = 1_200_000
 LAMBDA = 10
 EPS = 0.001
 DEVICE = get_device()
