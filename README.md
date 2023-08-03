@@ -19,3 +19,11 @@ $$\mathcal{L}_{GP} = \lambda \mathbb{E}_{\hat{x} \sim \mathbb{P}_{\hat{x}}}\Big[
 | 256×256 |  |
 | 512×512 |  |
 | 1,024×1,024 |  |
+
+# Research
+## 23.08.03
+- 이전까지는 Celeb-A HQ의 Training set에 대해 Mean과 Std를 계산해서 이걸 가지고 Normalize했습니다.
+    - `T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269))`
+- 논문에서는 "We represent training and generated images in $[-1, 1]$."라는 표현이 있는 것을 알고 있었으나 이를 간과하고 있었습니다.
+- 다음과 같이 코드를 수정했습니다.
+    - `T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))`

@@ -20,7 +20,7 @@ class CelebAHQDataset(Dataset):
             T.Resize(resol),
             T.RandomHorizontalFlip(0.5),
             T.ToTensor(),
-            # "We represent training and generated images in $[-1, 1]$".
+            # "We represent training and generated images in $[-1, 1]$."
             T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
             # get_image_dataset_mean_and_std(data_dir)
             # T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
