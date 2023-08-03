@@ -16,7 +16,6 @@ from utils import (
     save_checkpoint,
     image_to_grid,
     save_image,
-    resize_by_repeating_pixels,
     get_elapsed_time,
 )
 from model import Generator, Discriminator
