@@ -7,8 +7,6 @@ from pathlib import Path
 
 from utils import get_image_dataset_mean_and_std
 
-# "We represent training and generated images in $[-1, 1]$".
-
 
 class CelebAHQDataset(Dataset):
     def __init__(self, data_dir, split="train", resol=1024):
@@ -22,8 +20,10 @@ class CelebAHQDataset(Dataset):
             T.Resize(resol),
             T.RandomHorizontalFlip(0.5),
             T.ToTensor(),
+            # "We represent training and generated images in $[-1, 1]$".
+            T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
             # get_image_dataset_mean_and_std(data_dir)
-            T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
+            # T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
         ])
 
     def __getitem__(self, idx):
@@ -37,5 +37,5 @@ class CelebAHQDataset(Dataset):
 
 if __name__ == "__main__":
     data_dir = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-    ds = CelebAHQDataset(data_dir=data_dir)
-    ds[10]
+    ds = CelebAHQDataset(data_dir=data_dir, resol=32)
+    ds[10].min(), ds[10].max()

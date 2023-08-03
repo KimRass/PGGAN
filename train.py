@@ -32,7 +32,8 @@ IMG_DIR = ROOT_DIR/"generated_images"
 N_IMG_STEPS = 1000
 N_CKPT_STEPS = 4000
 
-R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3}
+# R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
+R2B = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 10, 512: 6, 1024: 3} # In my case
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
@@ -110,10 +111,10 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
-# ckpt_path = CKPT_DIR/"32×32_32000.pth"
-# gen.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+disc.load_state_dict(torch.load(CKPT_DIR/"D/128×128/128×128_50000.pth", map_location=DEVICE))
+gen.load_state_dict(torch.load(CKPT_DIR/"G/128×128/128×128_50000.pth", map_location=DEVICE))
 
-resol_idx = 0
+resol_idx = 5
 trans_phase = False
 step = 0
 
