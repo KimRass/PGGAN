@@ -37,5 +37,4 @@ class CelebAHQDataset(Dataset):
 
 if __name__ == "__main__":
     data_dir = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-    ds = CelebAHQDataset(data_dir=data_dir, resol=32)
-    ds[10].min(), ds[10].max()
+    ds = CelebAHQDataset(data_dir=data_dir, resol=16)

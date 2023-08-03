@@ -14,7 +14,7 @@ from contextlib import nullcontext
 from utils import (
     get_device,
     save_checkpoint,
-    batched_image_to_grid,
+    image_to_grid,
     save_image,
     resize_by_repeating_pixels,
     get_elapsed_time,
@@ -113,12 +113,17 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
-disc.load_state_dict(torch.load(CKPT_DIR/"D/128×128_50000.pth", map_location=DEVICE))
-gen.load_state_dict(torch.load(CKPT_DIR/"G/128×128_50000.pth", map_location=DEVICE))
+ckpt = torch.load("/Users/jongbeomkim/Downloads/pretrained/128×128_20000.pth", map_location=DEVICE)
+disc.load_state_dict(ckpt["D"])
+gen.load_state_dict(ckpt["G"])
+disc_optim.load_state_dict(ckpt["D_optimizer"])
+gen_optim.load_state_dict(ckpt["G_optimizer"])
 
-resol_idx = 5
+step = ckpt["step"]
+# trans_phase = ckpt["trans_phase"]
 trans_phase = False
-step = 0
+# resol_idx = ckpt["resol_idx"]
+resol_idx = 5
 resol = RESOLS[resol_idx]
 print(f"""Resuming from resolution {resol} and step {step}. (Transition phase: {trans_phase})""")
 
@@ -207,10 +212,7 @@ while True:
         with torch.no_grad():
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_image = fake_image.detach().cpu()
-            grid = batched_image_to_grid(
-                fake_image[: 9, ...], n_cols=3, mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)
-            )
-            grid = resize_by_repeating_pixels(grid, resol=resol)
+            grid = image_to_grid(fake_image[: 9, ...], n_cols=3, value_range=(-1, 1))
             if trans_phase:
                 save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}/{step}.jpg"""
             else:
@@ -226,8 +228,9 @@ while True:
         else:
             filename = f"""{resol}×{resol}_{step}.pth"""
         save_checkpoint(
-            resol=resol,
+            resol_idx=resol_idx,
             step=step,
+            trans_phase=trans_phase,
             disc=disc,
             gen=gen,
             disc_optim=disc_optim,

@@ -1,11 +1,12 @@
+import torch
+import torchvision.transforms as T
+import torchvision.transforms.functional as TF
+from torchvision.utils import make_grid
 from PIL import Image
 from pathlib import Path
 import numpy as np
 from time import time
 from datetime import timedelta
-import torch
-import torchvision.transforms as T
-from torchvision.utils import make_grid
 import numpy as np
 from tqdm.auto import tqdm
 
@@ -21,11 +22,6 @@ def save_image(img, path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
     _to_pil(img).save(str(path))
-
-
-def resize_by_repeating_pixels(img, resol):
-    img = np.repeat(np.repeat(img, repeats=1024 // resol, axis=0), repeats=1024 // resol, axis=1)
-    return img
 
 
 def show_image(img):
@@ -44,12 +40,13 @@ def get_device():
     return device
 
 
-def save_checkpoint(resol, step, disc, gen, disc_optim, gen_optim, save_path):
+def save_checkpoint(resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, save_path):
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
     ckpt = {
-        "resolution": resol,
+        "resolution_index": resol_idx,
         "step": step,
+        "transition_phase": trans_phase,
         "D": disc.state_dict(),
         "G": gen.state_dict(),
         "D_optimizer": disc_optim.state_dict(),
@@ -77,23 +74,11 @@ def get_image_dataset_mean_and_std(data_dir, ext="jpg"):
     return mean, std
 
 
-def batched_image_to_grid(image, n_cols, mean=(0, 0, 0), std=(1, 1, 1)):
-    b, _, h, w = image.shape
-    assert b % n_cols == 0,\
-        "The batch size should be a multiple of `n_cols` argument"
-    pad = max(1, int(max(h, w) * 0.02))
-    grid = make_grid(tensor=image, nrow=n_cols, normalize=False, padding=pad)
-    grid = grid.clone().permute((1, 2, 0)).detach().cpu().numpy()
-
-    grid *= std
-    grid += mean
-    grid *= 255.0
-    grid = np.clip(a=grid, a_min=0, a_max=255).astype("uint8")
-
-    for k in range(n_cols + 1):
-        grid[:, (pad + h) * k: (pad + h) * k + pad, :] = 255
-    for k in range(b // n_cols + 1):
-        grid[(pad + h) * k: (pad + h) * k + pad, :, :] = 255
+def image_to_grid(image, n_cols, value_range=(-1, 1)):
+    _, _, h, w = image.shape
+    image = image.repeat_interleave(1024 // h, dim=2).repeat_interleave(1024 // w, dim=3)
+    grid = make_grid(image, nrow=n_cols, padding=20, normalize=True, value_range=value_range, pad_value=1)
+    grid = TF.to_pil_image(grid)
     return grid
 
 
