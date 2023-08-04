@@ -42,7 +42,7 @@ RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 9, 512: 6
 RESOL_N_IMAGES = {4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 1_600_000}
 
 LAMBDA = 10
-EPS = 0.001
+LOSS_EPS = 0.001
 DEVICE = get_device()
 RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 N_WORKERS = 4
@@ -51,7 +51,6 @@ AUTOCAST = True
 LR = 0.001
 BETA1 = 0
 BETA2 = 0.99
-EPS = 1e-8
 
 # "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
 # the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
@@ -108,8 +107,9 @@ disc = nn.DataParallel(disc)
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
 # generator output at any given point during the training, we use an exponential running average
 # for the weights of the generator with decay $0.999$."
-gen_optim = Adam(params=gen.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS)
-disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=EPS)
+ADAM_EPS = 1e-8
+gen_optim = Adam(params=gen.parameters(), lr=LR, betas=(BETA1, BETA2), eps=ADAM_EPS)
+disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=ADAM_EPS)
 
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
@@ -175,7 +175,7 @@ while True:
     # to keep the discriminator output from drifting too far away from zero. We set
     # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
     # where $\epsilon_{drift} = 0.001$."
-    disc_loss3 = EPS * torch.mean(real_pred ** 2)
+    disc_loss3 = LOSS_EPS * torch.mean(real_pred ** 2)
     disc_loss = disc_loss1 + disc_loss2 + disc_loss3
     if AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
