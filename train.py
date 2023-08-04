@@ -124,7 +124,7 @@ disc_optim.load_state_dict(ckpt["D_optimizer"])
 gen_optim.load_state_dict(ckpt["G_optimizer"])
 
 step = ckpt["step"]
-trans_phase = ckpt["trans_phase"]
+trans_phase = ckpt["transition_phase"]
 resol_idx = ckpt["resolution_index"]
 resol = RESOLS[resol_idx]
 print(f"""Resuming from resolution {resol}×{resol} and step {step}. (Transition phase: {trans_phase})""")
