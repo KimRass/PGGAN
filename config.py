@@ -33,8 +33,8 @@ RESOL_N_IMAGES = {
 # RESOL_N_IMAGES = {4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 1_600_000}
 
 ### Resume
-# CKPT_PATH = "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_184000.pth"
-CKPT_PATH = None
+CKPT_PATH = "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_180000.pth"
+# CKPT_PATH = None
 STEP = 0
 TRANS_PHASE = True
 RESOL_IDX = 6

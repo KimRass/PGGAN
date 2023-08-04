@@ -105,8 +105,9 @@ resol = config.RESOLS[resol_idx]
 n_images = get_n_images(resol)
 batch_size = get_batch_size(resol)
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
-print(f"""Resuming from resolution {resol:,}×{resol:,} and step {step:,}/{n_steps:,}.""", end=" ")
-print(f"""(Transition phase: {trans_phase})""")
+if config.CKPT_PATH is not None:
+    print(f"""Resuming from resolution {resol:,}×{resol:,} and step {step:,}/{n_steps:,}.""", end=" ")
+    print(f"""(Transition phase: {trans_phase})""")
 
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
 train_di = iter(train_dl)
