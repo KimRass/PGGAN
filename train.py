@@ -69,7 +69,7 @@ def get_n_steps(n_images, batch_size):
     return n_steps
 
 
-def get_alpha(step, n_steps):
+def get_alpha(step, n_steps, trans_phase):
     if trans_phase:
         # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
         # During the transition we treat the layers that operate on the higher resolution like a residual block,
