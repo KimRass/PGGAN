@@ -116,7 +116,7 @@ disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
 ckpt = torch.load(
-    "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_112000.pth", map_location=DEVICE
+    "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_136000.pth", map_location=DEVICE
 )
 disc.load_state_dict(ckpt["D"])
 gen.load_state_dict(ckpt["G"])
@@ -207,7 +207,7 @@ while True:
         disc_running_loss /= N_IMG_STEPS
         gen_running_loss /= N_IMG_STEPS
 
-        print(f"""[ {resol}×{resol}][{step}/{n_steps} ][ {alpha:.3f} ]""", end="")
+        print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end="")
         print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
         print(f"""[ D loss: {disc_running_loss:.4f} ]""", end="")
         print(f"""[ G loss: {gen_running_loss:.4f} ]""", end="")
