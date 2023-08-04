@@ -91,11 +91,12 @@ gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
-ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
-disc.load_state_dict(ckpt["D"])
-gen.load_state_dict(ckpt["G"])
-disc_optim.load_state_dict(ckpt["D_optimizer"])
-gen_optim.load_state_dict(ckpt["G_optimizer"])
+if config.CKPT_PATH is not None:
+    ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
+    disc.load_state_dict(ckpt["D"])
+    gen.load_state_dict(ckpt["G"])
+    disc_optim.load_state_dict(ckpt["D_optimizer"])
+    gen_optim.load_state_dict(ckpt["G_optimizer"])
 
 step = config.STEP if config.STEP is not None else ckpt["step"]
 trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
