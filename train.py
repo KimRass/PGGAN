@@ -116,7 +116,7 @@ disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
 ckpt = torch.load(
-    "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_20000.pth", map_location=DEVICE
+    "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_112000.pth", map_location=DEVICE
 )
 disc.load_state_dict(ckpt["D"])
 gen.load_state_dict(ckpt["G"])
@@ -124,15 +124,14 @@ disc_optim.load_state_dict(ckpt["D_optimizer"])
 gen_optim.load_state_dict(ckpt["G_optimizer"])
 
 step = ckpt["step"]
-# trans_phase = ckpt["trans_phase"]
-trans_phase = False
-# resol_idx = ckpt["resol_idx"]
-resol_idx = 5
+trans_phase = ckpt["trans_phase"]
+resol_idx = ckpt["resolution_index"]
 resol = RESOLS[resol_idx]
 print(f"""Resuming from resolution {resol}×{resol} and step {step}. (Transition phase: {trans_phase})""")
 
 batch_size = get_batch_size(resol)
-n_images = get_n_images(resol)
+# n_images = get_n_images(resol)
+n_images = 3_600_000
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
 train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
 train_di = iter(train_dl)
@@ -208,10 +207,10 @@ while True:
         disc_running_loss /= N_IMG_STEPS
         gen_running_loss /= N_IMG_STEPS
 
-        print(f"""[ {resol}×{resol} ][ {step}/{n_steps} ][ {alpha:.3f} ]""", end=" ")
-        print(f"""D loss: {disc_running_loss:.4f} |""", end=" ")
-        print(f"""G loss: {gen_running_loss:.4f} |""", end=" ")
-        print(f"""Time: {get_elapsed_time(start_time)}""")
+        print(f"""[{resol}×{resol}][{step}/{n_steps}][{alpha:.3f}][{get_elapsed_time(start_time)}]""", end="")
+        print(f"""[D loss: {disc_running_loss:.4f}]""", end="")
+        print(f"""[G loss: {gen_running_loss:.4f}]""", end="")
+        print(f"""[GP: {gp:.4f}]""")
         start_time = time()
 
         gen.eval()
