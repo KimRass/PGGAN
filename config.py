@@ -4,7 +4,7 @@ RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 N_WORKERS = 4
 AUTOCAST = True
 # RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 6, 512: 6, 1024: 3} # In my case
+RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 6, 1024: 3} # In my case
 
 ### Loss
 LAMBDA = 10
@@ -34,6 +34,9 @@ RESOL_N_IMAGES = {
 
 ### Resume
 CKPT_PATH = "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_184000.pth"
-STEP = 184_000
-TRANS_PHASE = False
-RESOL_IDX = 5
+# STEP = 184_000
+# TRANS_PHASE = False
+# RESOL_IDX = 5
+STEP = None
+TRANS_PHASE = None
+RESOL_IDX = None
