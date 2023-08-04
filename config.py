@@ -4,7 +4,7 @@ RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 N_WORKERS = 4
 AUTOCAST = True
 # RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 9, 512: 6, 1024: 3} # In my case
+RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 6, 512: 6, 1024: 3} # In my case
 
 ### Loss
 LAMBDA = 10
