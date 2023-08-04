@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from pathlib import Path
 from time import time
 from contextlib import nullcontext
+import config
 
 from utils import (
     get_device,
@@ -22,45 +23,21 @@ from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
-# DATA_DIR = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq"
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"pretrained"
 IMG_DIR = ROOT_DIR/"generated_images"
 
-N_IMG_STEPS = 1000
-N_CKPT_STEPS = 4000
-
-# RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-# RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 9, 512: 6, 1024: 3} # In my case
-RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 9, 512: 6, 1024: 3} # In my case
-# "We start with 4×4 resolution and train the networks until we have shown the discriminator
-# 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
-# during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
-# during 800k images, etc."
-# Not in the paper
-RESOL_N_IMAGES = {4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 1_600_000}
-
-LAMBDA = 10
-LOSS_EPS = 0.001
 DEVICE = get_device()
-RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
-N_WORKERS = 4
-AUTOCAST = True
-
-LR = 0.001
-BETA1 = 0
-BETA2 = 0.99
 
 # "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
 # the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
 # to avoid exceeding the available memory budget."
 def get_batch_size(resol):
-    return RESOL_BATCH_SIZE[resol]
+    return config.RESOL_BATCH_SIZE[resol]
 
 
 def get_n_images(resol):
-    return RESOL_N_IMAGES[resol]
+    return config.RESOL_N_IMAGES[resol]
 
 
 def get_n_steps(n_images, batch_size):
@@ -80,9 +57,9 @@ def get_alpha(step, n_steps, trans_phase):
 
 
 def get_dataloader(split, batch_size, resol):
-    ds = CelebAHQDataset(data_dir=DATA_DIR, split=split, resol=resol)
+    ds = CelebAHQDataset(data_dir=config.DATA_DIR, split=split, resol=resol)
     dl = DataLoader(
-        ds, batch_size=batch_size, shuffle=True, num_workers=N_WORKERS, pin_memory=True, drop_last=True
+        ds, batch_size=batch_size, shuffle=True, num_workers=config.N_WORKERS, pin_memory=True, drop_last=True
     )
     return dl
 
@@ -107,28 +84,24 @@ disc = nn.DataParallel(disc)
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
 # generator output at any given point during the training, we use an exponential running average
 # for the weights of the generator with decay $0.999$."
-ADAM_EPS = 1e-8
-gen_optim = Adam(params=gen.parameters(), lr=LR, betas=(BETA1, BETA2), eps=ADAM_EPS)
-disc_optim = Adam(params=disc.parameters(), lr=LR, betas=(BETA1, BETA2), eps=ADAM_EPS)
+gen_optim = Adam(params=gen.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS)
+disc_optim = Adam(params=disc.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS)
 
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
 
 ### Resume from checkpoint.
-ckpt = torch.load(
-    "/home/ubuntu/project/pggan_from_scratch/pretrained/128×128_140000.pth", map_location=DEVICE
-)
+ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
 disc.load_state_dict(ckpt["D"])
 gen.load_state_dict(ckpt["G"])
 disc_optim.load_state_dict(ckpt["D_optimizer"])
 gen_optim.load_state_dict(ckpt["G_optimizer"])
 
-step = ckpt["step"]
-trans_phase = ckpt["transition_phase"]
-resol_idx = ckpt["resolution_index"]
-resol = RESOLS[resol_idx]
-# n_images = get_n_images(resol)
-n_images = 3_600_000
+step = config.STEP if config.STEP is not None else ckpt["step"]
+trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
+resol_idx = config.RESOL_IDX if config.RESOL_IDX is not None else ckpt["resolution_index"]
+resol = config.RESOLS[resol_idx]
+n_images = get_n_images(resol)
 batch_size = get_batch_size(resol)
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
 print(f"""Resuming from resolution {resol:,}×{resol:,} and step {step:,}/{n_steps:,}.""", end="\n")
@@ -160,7 +133,7 @@ while True:
 
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
     noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if AUTOCAST else nullcontext():
+    with torch.config.AUTOCAST(device_type=DEVICE.type, dtype=torch.float16) if config.AUTOCAST else nullcontext():
         real_pred = disc(real_image, resol=resol, alpha=alpha)
         fake_image = gen(noise, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
@@ -169,15 +142,15 @@ while True:
     gp = get_gradient_penalty(
         disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
     )
-    disc_loss2 = LAMBDA * gp
+    disc_loss2 = config.LAMBDA * gp
     # "We use the WGAN-GP loss."
     # "We introduce a fourth term into the discriminator loss with an extremely small weight
     # to keep the discriminator output from drifting too far away from zero. We set
     # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
     # where $\epsilon_{drift} = 0.001$."
-    disc_loss3 = LOSS_EPS * torch.mean(real_pred ** 2)
+    disc_loss3 = config.LOSS_EPS * torch.mean(real_pred ** 2)
     disc_loss = disc_loss1 + disc_loss2 + disc_loss3
-    if AUTOCAST:
+    if config.AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
         disc_scaler.update()
@@ -189,10 +162,10 @@ while True:
     gen_optim.zero_grad()
 
     freeze_model(disc)
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
+    with torch.config.AUTOCAST(device_type=DEVICE.type, dtype=torch.float16):
         fake_pred = disc(fake_image, resol=resol, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
-    if AUTOCAST:
+    if config.AUTOCAST:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
         gen_scaler.update()
@@ -204,9 +177,9 @@ while True:
     disc_running_loss += disc_loss1.item()
     gen_running_loss += gen_loss.item()
 
-    if (step % N_IMG_STEPS == 0) or (step == n_steps):
-        disc_running_loss /= N_IMG_STEPS
-        gen_running_loss /= N_IMG_STEPS
+    if (step % config.N_IMG_STEPS == 0) or (step == n_steps):
+        disc_running_loss /= config.N_IMG_STEPS
+        gen_running_loss /= config.N_IMG_STEPS
 
         print(f"""[ {resol:,}×{resol:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]""", end="")
         print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
@@ -229,7 +202,7 @@ while True:
         disc_running_loss = 0
         gen_running_loss = 0
 
-    if (step % N_CKPT_STEPS == 0) or (step == n_steps):
+    if (step % config.N_CKPT_STEPS == 0) or (step == n_steps):
         if trans_phase:
             filename = f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
         else:
@@ -248,7 +221,7 @@ while True:
     if step >= n_steps:
         if not trans_phase:
             resol_idx += 1
-            resol = RESOLS[resol_idx]
+            resol = config.RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
             n_images = get_n_images(resol)
             n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
