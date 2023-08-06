@@ -4,10 +4,8 @@ import torchvision.transforms.functional as TF
 from torchvision.utils import make_grid
 from PIL import Image
 from pathlib import Path
-import numpy as np
 from time import time
 from datetime import timedelta
-import numpy as np
 from tqdm.auto import tqdm
 
 

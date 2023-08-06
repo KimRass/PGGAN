@@ -23,8 +23,10 @@ from model import Generator, Discriminator
 from celebahq import CelebAHQDataset
 from loss import get_gradient_penalty
 
+RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+
 ROOT_DIR = Path(__file__).parent
-CKPT_DIR = ROOT_DIR/"pretrained"
+CKPT_DIR = ROOT_DIR/"checkpoints"
 IMG_DIR = ROOT_DIR/"generated_images"
 
 DEVICE = get_device()
@@ -101,7 +103,7 @@ if config.CKPT_PATH is not None:
 step = config.STEP if config.STEP is not None else ckpt["step"]
 trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
 resol_idx = config.RESOL_IDX if config.RESOL_IDX is not None else ckpt["resolution_index"]
-resol = config.RESOLS[resol_idx]
+resol = RESOLS[resol_idx]
 n_images = get_n_images(resol)
 batch_size = get_batch_size(resol)
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
@@ -179,9 +181,9 @@ while True:
     disc_running_loss += disc_loss1.item()
     gen_running_loss += gen_loss.item()
 
-    if (step % config.N_IMG_STEPS == 0) or (step == n_steps):
-        disc_running_loss /= config.N_IMG_STEPS
-        gen_running_loss /= config.N_IMG_STEPS
+    if (step % config.N_PRINT_STEPS == 0) or (step == n_steps):
+        disc_running_loss /= config.N_PRINT_STEPS
+        gen_running_loss /= config.N_PRINT_STEPS
 
         print(f"""[ {resol:,}×{resol:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]""", end="")
         print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
@@ -223,7 +225,7 @@ while True:
     if step >= n_steps:
         if not trans_phase:
             resol_idx += 1
-            resol = config.RESOLS[resol_idx]
+            resol = RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
             n_images = get_n_images(resol)
             n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
