@@ -30,7 +30,7 @@ RESOL_N_IMAGES = {
 # RESOL_N_IMAGES = {4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 1_600_000}
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/pggan_from_scratch/pretrained/256×256_12000.pth"
+CKPT_PATH = "/home/ubuntu/project/pggan_from_scratch/checkpoints/256×256_12000.pth"
 # STEP = 184_000
 # TRANS_PHASE = False
 # RESOL_IDX = 5
