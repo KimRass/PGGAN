@@ -25,12 +25,22 @@ N_CKPT_STEPS = 4000
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
 RESOL_N_IMAGES = {
-    4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 800_000, 256: 800_000
+    4: 200_000,
+    8: 200_000,
+    16: 400_000,
+    32: 400_000,
+    64: 800_000,
+    128: 800_000,
+    256: 800_000,
+    512: 800_000,
+    1024: 800_000,
+    2048: 800_000,
+    4096: 800_000,
 }
 # RESOL_N_IMAGES = {4: 200_000, 8: 200_000, 16: 400_000, 32: 400_000, 64: 800_000, 128: 1_600_000}
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/256×256_260000.pth"
+CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/256×256_264000.pth"
 STEP = None
 TRANS_PHASE = None
 RESOL_IDX = None
