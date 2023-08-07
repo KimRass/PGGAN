@@ -6,7 +6,6 @@ import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam
 from torch.cuda.amp.grad_scaler import GradScaler
-from torch.utils.data import DataLoader
 from pathlib import Path
 from time import time
 from contextlib import nullcontext
@@ -18,63 +17,24 @@ from utils import (
     image_to_grid,
     save_image,
     get_elapsed_time,
+    freeze_model,
+    unfreeze_model,
+    get_batch_size,
+    get_n_images,
+    get_n_steps,
+    get_alpha,
 )
 from model import Generator, Discriminator
-from celebahq import CelebAHQDataset
+from celebahq import get_dataloader
 from loss import get_gradient_penalty
 
-RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+print(f"""AUTOCAST = {config.AUTOCAST}""")
 
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"checkpoints"
 IMG_DIR = ROOT_DIR/"generated_images"
 
 DEVICE = get_device()
-
-# "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
-# the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
-# to avoid exceeding the available memory budget."
-def get_batch_size(resol):
-    return config.RESOL_BATCH_SIZE[resol]
-
-
-def get_n_images(resol):
-    return config.RESOL_N_IMAGES[resol]
-
-
-def get_n_steps(n_images, batch_size):
-    n_steps = n_images // batch_size
-    return n_steps
-
-
-def get_alpha(step, n_steps, trans_phase):
-    if trans_phase:
-        # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
-        # During the transition we treat the layers that operate on the higher resolution like a residual block,
-        # whose weight increases linearly from 0 to 1."
-        alpha = step / n_steps
-    else:
-        alpha = 1
-    return alpha
-
-
-def get_dataloader(split, batch_size, resol):
-    ds = CelebAHQDataset(data_dir=config.DATA_DIR, split=split, resol=resol)
-    dl = DataLoader(
-        ds, batch_size=batch_size, shuffle=True, num_workers=config.N_WORKERS, pin_memory=True, drop_last=True
-    )
-    return dl
-
-
-def freeze_model(model):
-    for p in model.parameters():
-        p.requires_grad = False
-
-
-def unfreeze_model(model):
-    for p in model.parameters():
-        p.requires_grad = True
-
 
 gen = Generator().to(DEVICE)
 gen = nn.DataParallel(gen)
@@ -86,8 +46,12 @@ disc = nn.DataParallel(disc)
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
 # generator output at any given point during the training, we use an exponential running average
 # for the weights of the generator with decay $0.999$."
-gen_optim = Adam(params=gen.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS)
-disc_optim = Adam(params=disc.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS)
+gen_optim = Adam(
+    params=gen.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS
+)
+disc_optim = Adam(
+    params=disc.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS
+)
 
 gen_scaler = GradScaler()
 disc_scaler = GradScaler()
@@ -99,11 +63,13 @@ if config.CKPT_PATH is not None:
     gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
     gen_optim.load_state_dict(ckpt["G_optimizer"])
+    disc_scaler.load_state_dict(ckpt["D_scaler"])
+    gen_scaler.load_state_dict(ckpt["G_scaler"])
 
 step = config.STEP if config.STEP is not None else ckpt["step"]
 trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
 resol_idx = config.RESOL_IDX if config.RESOL_IDX is not None else ckpt["resolution_index"]
-resol = RESOLS[resol_idx]
+resol = config.RESOLS[resol_idx]
 n_images = get_n_images(resol)
 batch_size = get_batch_size(resol)
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
@@ -142,18 +108,19 @@ while True:
         fake_image = gen(noise, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
-    disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
-    gp = get_gradient_penalty(
-        disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
-    )
-    disc_loss2 = config.LAMBDA * gp
-    # "We use the WGAN-GP loss."
-    # "We introduce a fourth term into the discriminator loss with an extremely small weight
-    # to keep the discriminator output from drifting too far away from zero. We set
-    # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
-    # where $\epsilon_{drift} = 0.001$."
-    disc_loss3 = config.LOSS_EPS * torch.mean(real_pred ** 2)
-    disc_loss = disc_loss1 + disc_loss2 + disc_loss3
+        disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
+        gp = get_gradient_penalty(
+            disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
+        )
+        disc_loss2 = config.LAMBDA * gp
+        # "We use the WGAN-GP loss."
+        # "We introduce a fourth term into the discriminator loss with an extremely small weight
+        # to keep the discriminator output from drifting too far away from zero. We set
+        # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
+        # where $\epsilon_{drift} = 0.001$."
+        disc_loss3 = config.LOSS_EPS * torch.mean(real_pred ** 2)
+        disc_loss = disc_loss1 + disc_loss2 + disc_loss3
+
     if config.AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
@@ -166,9 +133,11 @@ while True:
     gen_optim.zero_grad()
 
     freeze_model(disc)
+
     with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
         fake_pred = disc(fake_image, resol=resol, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
+
     if config.AUTOCAST:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
@@ -176,6 +145,7 @@ while True:
     else:
         gen_loss.backward()
         gen_optim.step()
+
     unfreeze_model(disc)
 
     disc_running_loss += disc_loss1.item()
@@ -219,13 +189,15 @@ while True:
             gen=gen,
             disc_optim=disc_optim,
             gen_optim=gen_optim,
+            disc_scaler=disc_scaler,
+            gen_scaler=gen_scaler,
             save_path=CKPT_DIR/filename,
         )
 
     if step >= n_steps:
         if not trans_phase:
             resol_idx += 1
-            resol = RESOLS[resol_idx]
+            resol = config.RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
             n_images = get_n_images(resol)
             n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)

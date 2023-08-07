@@ -8,6 +8,8 @@ from time import time
 from datetime import timedelta
 from tqdm.auto import tqdm
 
+import config
+
 
 def _to_pil(img):
     if not isinstance(img, Image.Image):
@@ -38,7 +40,9 @@ def get_device():
     return device
 
 
-def save_checkpoint(resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, save_path):
+def save_checkpoint(
+    resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
+):
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
     ckpt = {
@@ -49,6 +53,8 @@ def save_checkpoint(resol_idx, step, trans_phase, disc, gen, disc_optim, gen_opt
         "G": gen.state_dict(),
         "D_optimizer": disc_optim.state_dict(),
         "G_optimizer": gen_optim.state_dict(),
+        "D_scaler": disc_scaler.state_dict(),
+        "G_scaler": gen_scaler.state_dict(),
     }
     torch.save(ckpt, str(save_path))
 
@@ -86,3 +92,40 @@ def print_number_of_parameters(model):
 
 def get_elapsed_time(start_time):
     return timedelta(seconds=round(time() - start_time))
+
+
+# "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
+# the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
+# to avoid exceeding the available memory budget."
+def get_batch_size(resol):
+    return config.RESOL_BATCH_SIZE[resol]
+
+
+def get_n_images(resol):
+    return config.RESOL_N_IMAGES[resol]
+
+
+def get_n_steps(n_images, batch_size):
+    n_steps = n_images // batch_size
+    return n_steps
+
+
+def get_alpha(step, n_steps, trans_phase):
+    if trans_phase:
+        # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
+        # During the transition we treat the layers that operate on the higher resolution like a residual block,
+        # whose weight increases linearly from 0 to 1."
+        alpha = step / n_steps
+    else:
+        alpha = 1
+    return alpha
+
+
+def freeze_model(model):
+    for p in model.parameters():
+        p.requires_grad = False
+
+
+def unfreeze_model(model):
+    for p in model.parameters():
+        p.requires_grad = True

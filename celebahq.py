@@ -1,10 +1,11 @@
 # Source: https://www.kaggle.com/datasets/lamsimon/celebahq
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T
 from PIL import Image
 from pathlib import Path
 
+import config
 from utils import get_image_dataset_mean_and_std
 
 
@@ -33,6 +34,19 @@ class CelebAHQDataset(Dataset):
 
     def __len__(self):
         return len(self.img_paths)
+
+
+def get_dataloader(split, batch_size, resol):
+    ds = CelebAHQDataset(data_dir=config.DATA_DIR, split=split, resol=resol)
+    dl = DataLoader(
+        ds,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=config.N_WORKERS,
+        pin_memory=True,
+        drop_last=True,
+    )
+    return dl
 
 
 if __name__ == "__main__":
