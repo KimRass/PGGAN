@@ -1,5 +1,5 @@
 ### Data
-DATA_DIR = "/home/ubuntu/project/celebahq/celeba_hq" # DO NOT MODIFY
+DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq" # DO NOT MODIFY
 
 ### Dataloader
 N_WORKERS = 4 # DO NOT MODIFY
@@ -31,9 +31,6 @@ RESOL_N_IMAGES = {
 
 ### Checkpoint
 CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/256×256_252000.pth"
-# STEP = 184_000
-# TRANS_PHASE = False
-# RESOL_IDX = 5
 STEP = None
 TRANS_PHASE = None
 RESOL_IDX = None
