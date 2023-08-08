@@ -12,7 +12,6 @@ from contextlib import nullcontext
 import config
 
 from utils import (
-    get_device,
     save_checkpoint,
     image_to_grid,
     save_image,
