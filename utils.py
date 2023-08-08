@@ -29,15 +29,6 @@ def show_image(img):
     copied_img = _to_pil(copied_img)
     copied_img.show()
 
-
-def get_device():
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-    return device
-
-
 def save_checkpoint(
     resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
 ):
