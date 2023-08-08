@@ -33,10 +33,8 @@ def show_image(img):
 def get_device():
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        print(f"""Using {torch.cuda.device_count()} GPU(s).""")
     else:
         device = torch.device("cpu")
-        print("Using CPU.")
     return device
 
 
