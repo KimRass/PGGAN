@@ -29,6 +29,7 @@ from celebahq import get_dataloader
 from loss import get_gradient_penalty
 
 print(f"""AUTOCAST = {config.AUTOCAST}""")
+print(f"""N_WORKES = {config.N_WORKERS}""")
 
 ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"checkpoints"
@@ -72,6 +73,7 @@ resol_idx = config.RESOL_IDX if config.RESOL_IDX is not None else ckpt["resoluti
 resol = config.RESOLS[resol_idx]
 n_images = get_n_images(resol)
 batch_size = get_batch_size(resol)
+print(f"""batch_size = {batch_size}""")
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
 if config.CKPT_PATH is not None:
     print(f"""Resuming from resolution {resol:,}×{resol:,} and step {step:,}/{n_steps:,}.""", end=" ")
@@ -199,6 +201,7 @@ while True:
             resol_idx += 1
             resol = config.RESOLS[resol_idx]
             batch_size = get_batch_size(resol)
+            print(f"""batch_size = {batch_size}""")
             n_images = get_n_images(resol)
             n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
             train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
