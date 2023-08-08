@@ -29,6 +29,7 @@ def show_image(img):
     copied_img = _to_pil(copied_img)
     copied_img.show()
 
+
 def save_checkpoint(
     resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
 ):
@@ -38,13 +39,17 @@ def save_checkpoint(
         "resolution_index": resol_idx,
         "step": step,
         "transition_phase": trans_phase,
-        "D": disc.state_dict(),
-        "G": gen.state_dict(),
         "D_optimizer": disc_optim.state_dict(),
         "G_optimizer": gen_optim.state_dict(),
         "D_scaler": disc_scaler.state_dict(),
         "G_scaler": gen_scaler.state_dict(),
     }
+    if config.N_GPUS > 1 and config.MULTI_GPU:
+        ckpt["D"] = disc.module.state_dict()
+        ckpt["G"] = gen.module.state_dict()
+    else:
+        ckpt["D"] = disc.state_dict()
+        ckpt["G"] = gen.state_dict()
     torch.save(ckpt, str(save_path))
 
 

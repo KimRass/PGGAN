@@ -33,17 +33,19 @@ ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"checkpoints"
 IMG_DIR = ROOT_DIR/"generated_images"
 
-disc = Discriminator().to(config.DEVICE)
-gen = Generator().to(config.DEVICE)
-if config.MULTI_GPU:
-    print(f"""Using {torch.cuda.device_count()} GPUs.""")
+disc = Discriminator()
+gen = Generator()
+if config.N_GPUS > 1 and config.MULTI_GPU:
     disc = nn.DataParallel(disc)
     gen = nn.DataParallel(gen)
-elif config.DEVICE.type == "cuda":
+    print(f"""Using {config.N_GPUS} GPUs.""")
+elif config.N_GPUS == 1:
+    DEVICE = torch.device("cuda")
+    disc = disc.to(DEVICE)
+    disc = disc.to(DEVICE)
     print("Using single GPU.")
 else:
     print("Using CPU.")
-
 
 # "We train the networks using Adam with $\alpha = 0.001$, $\beta_{1} = 0$, $\beta_{2} = 0.99$,
 # and $\epsilon = 10^{-8}$. We do not use any learning rate decay or rampdown, but for visualizing
@@ -61,7 +63,7 @@ gen_scaler = GradScaler()
 
 ### Resume from checkpoint.
 if config.CKPT_PATH is not None:
-    ckpt = torch.load(config.CKPT_PATH, map_location=config.DEVICE)
+    ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
     disc.load_state_dict(ckpt["D"])
     gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
@@ -97,7 +99,7 @@ while True:
     except StopIteration:
         train_di = iter(train_dl)
         real_image = next(train_di)
-    real_image = real_image.to(config.DEVICE)
+    real_image = real_image.to(DEVICE)
 
     gen.train()
 
@@ -106,8 +108,8 @@ while True:
     disc_optim.zero_grad()
 
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
-    noise = torch.randn(batch_size, 512, 1, 1, device=config.DEVICE)
-    with torch.autocast(device_type=config.DEVICE.type, dtype=torch.float16) if config.AUTOCAST else nullcontext():
+    noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if config.AUTOCAST else nullcontext():
         real_pred = disc(real_image, resol=resol, alpha=alpha)
         fake_image = gen(noise, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
@@ -138,7 +140,7 @@ while True:
 
     freeze_model(disc)
 
-    with torch.autocast(device_type=config.DEVICE.type, dtype=torch.float16):
+    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16):
         fake_pred = disc(fake_image, resol=resol, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
 

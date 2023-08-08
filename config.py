@@ -22,11 +22,8 @@ BETA2 = 0.99 # DO NOT MODIFY
 ADAM_EPS = 1e-8 # DO NOT MODIFY
 
 ### Training
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
-MULTI_GPU = True
+N_GPUS = torch.cuda.device_count()
+MULTI_GPU = False
 N_PRINT_STEPS = 1000
 N_CKPT_STEPS = 4000
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
