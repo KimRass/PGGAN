@@ -3,7 +3,6 @@
 
 import torch
 import torch.nn as nn
-from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam
 from torch.cuda.amp import GradScaler
 from pathlib import Path
@@ -41,7 +40,7 @@ if config.MULTI_GPU:
     disc = nn.DataParallel(disc)
     gen = nn.DataParallel(gen)
 elif config.DEVICE.type == "cuda":
-    print("Using GPU.")
+    print("Using single GPU.")
 else:
     print("Using CPU.")
 
