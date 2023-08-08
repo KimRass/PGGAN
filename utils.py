@@ -44,8 +44,6 @@ def save_checkpoint(
         "D_scaler": disc_scaler.state_dict(),
         "G_scaler": gen_scaler.state_dict(),
     }
-    # ckpt["D"] = disc.module.state_dict()
-    # ckpt["G"] = gen.module.state_dict()
     if config.N_GPUS > 1 and config.MULTI_GPU:
         ckpt["D"] = disc.module.state_dict()
         ckpt["G"] = gen.module.state_dict()

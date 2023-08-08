@@ -42,7 +42,7 @@ if config.N_GPUS > 1 and config.MULTI_GPU:
 elif config.N_GPUS == 1:
     DEVICE = torch.device("cuda")
     disc = disc.to(DEVICE)
-    disc = disc.to(DEVICE)
+    gen = gen.to(DEVICE)
     print("Using single GPU.")
 else:
     print("Using CPU.")
