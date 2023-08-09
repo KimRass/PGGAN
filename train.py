@@ -71,6 +71,7 @@ if config.CKPT_PATH is not None:
     disc = nn.DataParallel(disc)
     gen = nn.DataParallel(gen)
     print(disc.module)
+    print(ckpt["D"])
     disc.module.load_state_dict(ckpt["D"])
     gen.module.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
