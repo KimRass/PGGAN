@@ -18,6 +18,7 @@ def _get_state_dict(
     for old_key in list(state_dict.keys()):
         if old_key and old_key.startswith("module."):
             new_key = old_key[len("module."):]
+            print(old_key, new_key)
             new_state_dict[new_key] = state_dict[old_key]
     return new_state_dict
 
