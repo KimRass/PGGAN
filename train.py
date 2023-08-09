@@ -66,8 +66,8 @@ gen_scaler = GradScaler()
 ### Resume from checkpoint.
 if config.CKPT_PATH is not None:
     ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
-    disc = nn.DataParallel(disc)
-    gen = nn.DataParallel(gen)
+    # disc = nn.DataParallel(disc)
+    # gen = nn.DataParallel(gen)
     disc.load_state_dict(ckpt["D"])
     gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
