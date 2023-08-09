@@ -68,6 +68,8 @@ if config.CKPT_PATH is not None:
     ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
     # disc.load_state_dict(ckpt["D"])
     # gen.load_state_dict(ckpt["G"])
+    disc = nn.DataParallel(disc)
+    gen = nn.DataParallel(gen)
     disc.module.load_state_dict(ckpt["D"])
     gen.module.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
