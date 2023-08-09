@@ -68,6 +68,7 @@ ckpt = {
 }
 ckpt["D"] = disc.module.state_dict()
 ckpt["G"] = gen.module.state_dict()
+print(ckpt["D"].keys())
 # ckpt["D"] = disc.state_dict()
 # ckpt["G"] = gen.state_dict()
 
