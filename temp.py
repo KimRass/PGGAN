@@ -67,7 +67,9 @@ ckpt = {
     "D_scaler": disc_scaler.state_dict(),
     "G_scaler": gen_scaler.state_dict(),
 }
-ckpt["D"] = disc.module.state_dict()
-ckpt["G"] = gen.module.state_dict()
+# ckpt["D"] = disc.module.state_dict()
+# ckpt["G"] = gen.module.state_dict()
+ckpt["D"] = disc.state_dict()
+ckpt["G"] = gen.state_dict()
 
 torch.save(ckpt, str(save_path))
