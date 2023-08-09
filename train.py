@@ -66,8 +66,6 @@ gen_scaler = GradScaler()
 ### Resume from checkpoint.
 if config.CKPT_PATH is not None:
     ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
-    # disc = nn.DataParallel(disc)
-    # gen = nn.DataParallel(gen)
     disc.load_state_dict(ckpt["D"])
     gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
@@ -118,18 +116,18 @@ while True:
         fake_image = gen(noise, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
-        disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
-        gp = get_gradient_penalty(
-            disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
-        )
-        disc_loss2 = config.LAMBDA * gp
-        # "We use the WGAN-GP loss."
-        # "We introduce a fourth term into the discriminator loss with an extremely small weight
-        # to keep the discriminator output from drifting too far away from zero. We set
-        # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
-        # where $\epsilon_{drift} = 0.001$."
-        disc_loss3 = config.LOSS_EPS * torch.mean(real_pred ** 2)
-        disc_loss = disc_loss1 + disc_loss2 + disc_loss3
+    disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
+    gp = get_gradient_penalty(
+        disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
+    )
+    disc_loss2 = config.LAMBDA * gp
+    # "We use the WGAN-GP loss."
+    # "We introduce a fourth term into the discriminator loss with an extremely small weight
+    # to keep the discriminator output from drifting too far away from zero. We set
+    # $L' = L + \epsilon_{drift}\mathbb{E}_{x \in \mathbb{P}_{r}}[D(x)^{2}]$,
+    # where $\epsilon_{drift} = 0.001$."
+    disc_loss3 = config.LOSS_EPS * torch.mean(real_pred ** 2)
+    disc_loss = disc_loss1 + disc_loss2 + disc_loss3
 
     if config.AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
