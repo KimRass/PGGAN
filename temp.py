@@ -28,9 +28,6 @@ def _get_state_dict(
 disc = Discriminator()
 gen = Generator()
 
-# disc = nn.DataParallel(disc)
-# gen = nn.DataParallel(gen)
-
 disc_optim = Adam(
     params=disc.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS
 )
@@ -58,6 +55,8 @@ resol_idx = config.RESOL_IDX if config.RESOL_IDX is not None else ckpt["resoluti
 save_path=config.CKPT_PATH
 Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
+disc = nn.DataParallel(disc)
+gen = nn.DataParallel(gen)
 ckpt = {
     "resolution_index": resol_idx,
     "step": step,
@@ -67,9 +66,9 @@ ckpt = {
     "D_scaler": disc_scaler.state_dict(),
     "G_scaler": gen_scaler.state_dict(),
 }
-# ckpt["D"] = disc.module.state_dict()
-# ckpt["G"] = gen.module.state_dict()
-ckpt["D"] = disc.state_dict()
-ckpt["G"] = gen.state_dict()
+ckpt["D"] = disc.module.state_dict()
+ckpt["G"] = gen.module.state_dict()
+# ckpt["D"] = disc.state_dict()
+# ckpt["G"] = gen.state_dict()
 
 torch.save(ckpt, str(save_path))
