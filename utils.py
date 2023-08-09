@@ -50,6 +50,7 @@ def save_checkpoint(
     else:
         ckpt["D"] = disc.state_dict()
         ckpt["G"] = gen.state_dict()
+
     torch.save(ckpt, str(save_path))
 
 
