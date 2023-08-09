@@ -26,8 +26,8 @@ def _get_state_dict(
 disc = Discriminator()
 gen = Generator()
 
-disc = nn.DataParallel(disc)
-gen = nn.DataParallel(gen)
+# disc = nn.DataParallel(disc)
+# gen = nn.DataParallel(gen)
 
 disc_optim = Adam(
     params=disc.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS
