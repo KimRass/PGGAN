@@ -2,12 +2,25 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.cuda.amp import GradScaler
+from collections import OrderedDict
 
 import config
 from model import Generator, Discriminator
 from utils import (
     save_checkpoint,
 )
+
+
+def _get_state_dict(
+    state_dict
+):
+    new_state_dict = OrderedDict()
+    for old_key in list(state_dict.keys()):
+        if old_key and old_key.startswith("module."):
+            new_key = old_key[len("module."):]
+            new_state_dict[new_key] = state_dict[old_key]
+    return new_state_dict
+
 
 disc = Discriminator()
 gen = Generator()
@@ -28,8 +41,10 @@ gen_scaler = GradScaler()
 DEVICE = torch.device("cuda")
 if config.CKPT_PATH is not None:
     ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
-    disc.load_state_dict(ckpt["D"])
-    gen.load_state_dict(ckpt["G"])
+    # disc.load_state_dict(ckpt["D"])
+    # gen.load_state_dict(ckpt["G"])
+    disc.load_state_dict(_get_state_dict(ckpt["D"]))
+    gen.load_state_dict(_get_state_dict(ckpt["G"]))
     disc_optim.load_state_dict(ckpt["D_optimizer"])
     gen_optim.load_state_dict(ckpt["G_optimizer"])
 

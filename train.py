@@ -8,8 +8,8 @@ from torch.cuda.amp import GradScaler
 from pathlib import Path
 from time import time
 from contextlib import nullcontext
-import config
 
+import config
 from utils import (
     save_checkpoint,
     image_to_grid,
@@ -66,14 +66,10 @@ gen_scaler = GradScaler()
 ### Resume from checkpoint.
 if config.CKPT_PATH is not None:
     ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
-    # disc.load_state_dict(ckpt["D"])
-    # gen.load_state_dict(ckpt["G"])
     disc = nn.DataParallel(disc)
     gen = nn.DataParallel(gen)
-    print(disc.module)
-    print(ckpt["D"])
-    disc.module.load_state_dict(ckpt["D"])
-    gen.module.load_state_dict(ckpt["G"])
+    disc.load_state_dict(ckpt["D"])
+    gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
     gen_optim.load_state_dict(ckpt["G_optimizer"])
     # disc_scaler.load_state_dict(ckpt["D_scaler"])
