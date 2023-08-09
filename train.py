@@ -35,15 +35,16 @@ IMG_DIR = ROOT_DIR/"generated_images"
 
 disc = Discriminator()
 gen = Generator()
-if config.N_GPUS > 0:
+N_GPUS = torch.cuda.device_count()
+if N_GPUS > 0:
     DEVICE = torch.device("cuda")
     disc = disc.to(DEVICE)
     gen = gen.to(DEVICE)
-    if config.N_GPUS > 1 and config.MULTI_GPU:
+    if N_GPUS > 1 and config.MULTI_GPU:
         disc = nn.DataParallel(disc)
         gen = nn.DataParallel(gen)
 
-        print(f"""Using {config.N_GPUS} GPUs.""")
+        print(f"""Using {N_GPUS} GPUs.""")
     else:
         print("Using single GPU.")
 else:

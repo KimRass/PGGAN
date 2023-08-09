@@ -23,7 +23,6 @@ BETA2 = 0.99 # DO NOT MODIFY
 ADAM_EPS = 1e-8 # DO NOT MODIFY
 
 ### Training
-N_GPUS = torch.cuda.device_count()
 MULTI_GPU = False
 N_PRINT_STEPS = 1000
 N_CKPT_STEPS = 4000
