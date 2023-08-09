@@ -70,8 +70,8 @@ if config.CKPT_PATH is not None:
     gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
     gen_optim.load_state_dict(ckpt["G_optimizer"])
-    # disc_scaler.load_state_dict(ckpt["D_scaler"])
-    # gen_scaler.load_state_dict(ckpt["G_scaler"])
+    disc_scaler.load_state_dict(ckpt["D_scaler"])
+    gen_scaler.load_state_dict(ckpt["G_scaler"])
 
 step = config.STEP if config.STEP is not None else ckpt["step"]
 trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
