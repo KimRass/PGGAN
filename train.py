@@ -11,7 +11,6 @@ from contextlib import nullcontext
 
 import config
 from utils import (
-    save_checkpoint,
     image_to_grid,
     save_image,
     get_elapsed_time,
@@ -33,7 +32,33 @@ ROOT_DIR = Path(__file__).parent
 CKPT_DIR = ROOT_DIR/"checkpoints"
 IMG_DIR = ROOT_DIR/"generated_images"
 
+
+def save_checkpoint(
+    resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
+):
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+
+    ckpt = {
+        "resolution_index": resol_idx,
+        "step": step,
+        "transition_phase": trans_phase,
+        "D_optimizer": disc_optim.state_dict(),
+        "G_optimizer": gen_optim.state_dict(),
+        "D_scaler": disc_scaler.state_dict(),
+        "G_scaler": gen_scaler.state_dict(),
+    }
+    try:
+        ckpt["D"] = disc.module.state_dict()
+        ckpt["G"] = gen.module.state_dict()
+    except AttributeError:
+        ckpt["D"] = disc.state_dict()
+        ckpt["G"] = gen.state_dict()
+
+    torch.save(ckpt, str(save_path))
+
+
 disc = Discriminator()
+disc.module
 gen = Generator()
 N_GPUS = torch.cuda.device_count()
 if N_GPUS > 0:
