@@ -58,7 +58,6 @@ def save_checkpoint(
 
 
 disc = Discriminator()
-disc.module
 gen = Generator()
 N_GPUS = torch.cuda.device_count()
 if N_GPUS > 0:
