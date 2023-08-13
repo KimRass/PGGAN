@@ -47,10 +47,10 @@ def save_checkpoint(
         "D_scaler": disc_scaler.state_dict(),
         "G_scaler": gen_scaler.state_dict(),
     }
-    try:
+    if config.N_GPUS > 1 and config.MULTI_GPU:
         ckpt["D"] = disc.module.state_dict()
         ckpt["G"] = gen.module.state_dict()
-    except AttributeError:
+    else:
         ckpt["D"] = disc.state_dict()
         ckpt["G"] = gen.state_dict()
 
@@ -59,16 +59,15 @@ def save_checkpoint(
 
 disc = Discriminator()
 gen = Generator()
-N_GPUS = torch.cuda.device_count()
-if N_GPUS > 0:
+if config.N_GPUS > 0:
     DEVICE = torch.device("cuda")
     disc = disc.to(DEVICE)
     gen = gen.to(DEVICE)
-    if N_GPUS > 1 and config.MULTI_GPU:
+    if config.N_GPUS > 1 and config.MULTI_GPU:
         disc = nn.DataParallel(disc)
         gen = nn.DataParallel(gen)
 
-        print(f"""Using {N_GPUS} GPUs.""")
+        print(f"""Using {config.N_GPUS} GPUs.""")
     else:
         print("Using single GPU.")
 else:
