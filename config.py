@@ -43,7 +43,7 @@ RESOL_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_120000.pth"
+CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_156000.pth"
 STEP = None
 TRANS_PHASE = None
 RESOL_IDX = None
