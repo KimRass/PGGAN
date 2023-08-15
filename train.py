@@ -198,7 +198,7 @@ while True:
         with torch.no_grad():
             fake_image = gen(noise, resol=resol, alpha=alpha)
             fake_image = fake_image.detach().cpu()
-            grid = image_to_grid(fake_image[: 9, ...], n_cols=3, value_range=(-1, 1))
+            grid = image_to_grid(fake_image[: 9, ...], n_cols=2 if resol == 1024 else 3, value_range=(-1, 1))
             if trans_phase:
                 save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}/{step}.jpg"""
             else:
