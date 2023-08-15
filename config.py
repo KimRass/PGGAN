@@ -9,7 +9,7 @@ DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq" # DO NOT MODIFY
 N_WORKERS = 4 # DO NOT MODIFY
 AUTOCAST = False
 # RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 3} # In my case
+RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
 
 ### Loss
 LAMBDA = 10 # DO NOT MODIFY
@@ -43,7 +43,7 @@ RESOL_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_156000.pth"
+CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_266000.pth"
 STEP = None
 TRANS_PHASE = None
 RESOL_IDX = None
