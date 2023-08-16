@@ -135,7 +135,9 @@ while True:
 
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
     noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if config.AUTOCAST else nullcontext():
+    with torch.autocast(
+        device_type=DEVICE.type, dtype=torch.float16
+    ) if config.AUTOCAST else nullcontext():
         real_pred = disc(real_image, resol=resol, alpha=alpha)
         fake_image = gen(noise, resol=resol, alpha=alpha)
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
@@ -167,7 +169,9 @@ while True:
 
     freeze_model(disc)
 
-    with torch.autocast(device_type=DEVICE.type, dtype=torch.float16) if config.AUTOCAST else nullcontext():
+    with torch.autocast(
+        device_type=DEVICE.type, dtype=torch.float16
+    ) if config.AUTOCAST else nullcontext():
         fake_pred = disc(fake_image, resol=resol, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
 
@@ -191,9 +195,9 @@ while True:
 
         print(f"""[ {resol:,}×{resol:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]""", end="")
         print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
-        print(f"""[ D loss: {disc_running_loss:.4f} ]""", end="")
-        print(f"""[ G loss: {gen_running_loss:.4f} ]""", end="")
-        print(f"""[ GP: {gp:.6f} ]""")
+        print(f"""[ D loss: {disc_running_loss:.3f} ]""", end="")
+        print(f"""[ G loss: {gen_running_loss:.3f} ]""", end="")
+        print(f"""[ GP: {gp:.3f} ]""")
         start_time = time()
 
         gen.eval()
