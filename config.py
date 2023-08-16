@@ -46,7 +46,7 @@ IMG_SIZE_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_266666.pth"
+CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512to×1024×1024_500.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
