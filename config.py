@@ -7,7 +7,7 @@ DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
 
 ### Dataloader
 N_WORKERS = 4
-AUTOCAST = True
+AUTOCAST = False
 # IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
 IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
 
@@ -46,7 +46,7 @@ IMG_SIZE_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512to1024×1024_750.pth"
+CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_266666.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
