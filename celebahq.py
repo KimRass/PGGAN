@@ -10,15 +10,15 @@ from utils import get_image_dataset_mean_and_std
 
 
 class CelebAHQDataset(Dataset):
-    def __init__(self, data_dir, split="train", resol=1024):
+    def __init__(self, data_dir, split="train", img_size=1024):
         super().__init__()
 
         self.img_paths = list((Path(data_dir)/split).glob("**/*.jpg"))
         self.split = split
-        self.resol = resol
+        self.img_size = img_size
 
         self.transformer = T.Compose([
-            T.Resize(resol),
+            T.Resize(img_size),
             T.RandomHorizontalFlip(0.5),
             T.ToTensor(),
             # "We represent training and generated images in $[-1, 1]$."
@@ -36,8 +36,8 @@ class CelebAHQDataset(Dataset):
         return len(self.img_paths)
 
 
-def get_dataloader(split, batch_size, resol):
-    ds = CelebAHQDataset(data_dir=config.DATA_DIR, split=split, resol=resol)
+def get_dataloader(split, batch_size, img_size):
+    ds = CelebAHQDataset(data_dir=config.DATA_DIR, split=split, img_size=img_size)
     dl = DataLoader(
         ds,
         batch_size=batch_size,
@@ -51,4 +51,4 @@ def get_dataloader(split, batch_size, resol):
 
 if __name__ == "__main__":
     data_dir = "/Users/jongbeomkim/Documents/datasets/celebahq/"
-    ds = CelebAHQDataset(data_dir=data_dir, resol=16)
+    ds = CelebAHQDataset(data_dir=data_dir, img_size=16)

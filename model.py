@@ -143,8 +143,8 @@ class UpsampleBlock(nn.Module):
         return x
 
 
-def _get_depth(resol):
-    depth = int(math.log2(resol)) - 1
+def _get_depth(img_size):
+    depth = int(math.log2(img_size)) - 1
     return depth
 
 
@@ -173,12 +173,12 @@ class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
         self.to_rgb8 = ToRGB(32)
         self.to_rgb9 = ToRGB(16)
 
-    def forward(self, x, resol, alpha):
-        if resol == 4:
+    def forward(self, x, img_size, alpha):
+        if img_size == 4:
             x = self.block1(x)
             x = self.to_rgb1(x)
         else:
-            depth = _get_depth(resol)
+            depth = _get_depth(img_size)
             for d in range(1, depth):
                 x = eval(f"""self.block{d}""")(x)
 
@@ -267,12 +267,12 @@ class Discriminator(nn.Module): # 25,444,737 parameters in total.
         self.from_rgb8 = FromRGB(32)
         self.from_rgb9 = FromRGB(16)
 
-    def forward(self, x, resol, alpha):
-        if resol == 4:
+    def forward(self, x, img_size, alpha):
+        if img_size == 4:
             x = self.from_rgb1(x)
             x = self.block1(x)
         else:
-            depth = _get_depth(resol)
+            depth = _get_depth(img_size)
 
             skip = x.clone()
             skip = _half(skip)
@@ -290,14 +290,14 @@ class Discriminator(nn.Module): # 25,444,737 parameters in total.
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
-    for resol in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
+    for img_size in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
         alpha = 0.5
         gen = Generator()
         x = torch.randn(BATCH_SIZE, 512, 1, 1)
-        out = gen(x, resol=resol, alpha=alpha)
+        out = gen(x, img_size=img_size, alpha=alpha)
         out.shape
 
         disc = Discriminator()
-        x = torch.randn((BATCH_SIZE, 3, resol, resol))
-        out = disc(x, resol=resol, alpha=alpha)
+        x = torch.randn((BATCH_SIZE, 3, img_size, img_size))
+        out = disc(x, img_size=img_size, alpha=alpha)
         out.shape

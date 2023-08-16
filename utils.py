@@ -65,33 +65,6 @@ def get_elapsed_time(start_time):
     return timedelta(seconds=round(time() - start_time))
 
 
-# "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
-# the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
-# to avoid exceeding the available memory budget."
-def get_batch_size(resol):
-    return config.RESOL_BATCH_SIZE[resol]
-
-
-def get_n_images(resol):
-    return config.RESOL_N_IMAGES[resol]
-
-
-def get_n_steps(n_images, batch_size):
-    n_steps = n_images // batch_size
-    return n_steps
-
-
-def get_alpha(step, n_steps, trans_phase):
-    if trans_phase:
-        # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
-        # During the transition we treat the layers that operate on the higher resolution like a residual block,
-        # whose weight increases linearly from 0 to 1."
-        alpha = step / n_steps
-    else:
-        alpha = 1
-    return alpha
-
-
 def freeze_model(model):
     for p in model.parameters():
         p.requires_grad = False

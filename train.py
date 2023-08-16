@@ -16,10 +16,6 @@ from utils import (
     get_elapsed_time,
     freeze_model,
     unfreeze_model,
-    get_batch_size,
-    get_n_images,
-    get_n_steps,
-    get_alpha,
 )
 from model import Generator, Discriminator
 from celebahq import get_dataloader
@@ -33,13 +29,40 @@ CKPT_DIR = ROOT_DIR/"checkpoints"
 IMG_DIR = ROOT_DIR/"generated_images"
 
 
+# "We use a minibatch size $16$ for resolutions $4^{2}$–$128^{2}$ and then gradually decrease
+# the size according to $256^{2} \rightarrow 14$, $512^{2} \rightarrow 6$, $1024^{2} \rightarrow 3$
+# to avoid exceeding the available memory budget."
+def get_batch_size(img_size):
+    return config.IMG_SIZE_BATCH_SIZE[img_size]
+
+
+def get_n_images(img_size):
+    return config.IMG_SIZE_N_IMAGES[img_size]
+
+
+def get_n_steps(n_images, batch_size):
+    n_steps = n_images // batch_size
+    return n_steps
+
+
+def get_alpha(step, n_steps, trans_phase):
+    if trans_phase:
+        # "When doubling the resolution of the generator and discriminator we fade in the new layers smoothly.
+        # During the transition we treat the layers that operate on the higher resolution like a residual block,
+        # whose weight increases linearly from 0 to 1."
+        alpha = step / n_steps
+    else:
+        alpha = 1
+    return alpha
+
+
 def save_checkpoint(
-    resol_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
+    img_size_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
 ):
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
     ckpt = {
-        "resolution_index": resol_idx,
+        "image_size_index": img_size_idx,
         "step": step,
         "transition_phase": trans_phase,
         "D_optimizer": disc_optim.state_dict(),
@@ -99,17 +122,17 @@ if config.CKPT_PATH is not None:
 
 step = config.STEP if config.STEP is not None else ckpt["step"]
 trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
-resol_idx = config.RESOL_IDX if config.RESOL_IDX is not None else ckpt["resolution_index"]
-resol = config.RESOLS[resol_idx]
-n_images = get_n_images(resol)
-batch_size = get_batch_size(resol)
+img_size_idx = config.IMG_SIZE_IDX if config.IMG_SIZE_IDX is not None else ckpt["image_size_index"]
+img_size = config.IMG_SIZES[img_size_idx]
+n_images = get_n_images(img_size)
+batch_size = get_batch_size(img_size)
 print(f"""batch_size = {batch_size}""")
 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
 if config.CKPT_PATH is not None:
-    print(f"""Resuming from resolution {resol:,}×{resol:,} and step {step:,}/{n_steps:,}.""", end=" ")
+    print(f"""Resuming from resolution {img_size:,}×{img_size:,} and step {step:,}/{n_steps:,}.""", end=" ")
     print(f"""(Transition phase: {trans_phase})""")
 
-train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
+train_dl = get_dataloader(split="train", batch_size=batch_size, img_size=img_size)
 train_di = iter(train_dl)
 
 disc.train()
@@ -138,13 +161,13 @@ while True:
     with torch.autocast(
         device_type=DEVICE.type, dtype=torch.float16
     ) if config.AUTOCAST else nullcontext():
-        real_pred = disc(real_image, resol=resol, alpha=alpha)
-        fake_image = gen(noise, resol=resol, alpha=alpha)
-        fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
+        real_pred = disc(real_image, img_size=img_size, alpha=alpha)
+        fake_image = gen(noise, img_size=img_size, alpha=alpha)
+        fake_pred = disc(fake_image.detach(), img_size=img_size, alpha=alpha)
 
         disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
         gp = get_gradient_penalty(
-            disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
+            disc=disc, img_size=img_size, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
         )
 
         disc_loss2 = config.LAMBDA * gp
@@ -172,7 +195,7 @@ while True:
     with torch.autocast(
         device_type=DEVICE.type, dtype=torch.float16
     ) if config.AUTOCAST else nullcontext():
-        fake_pred = disc(fake_image, resol=resol, alpha=alpha)
+        fake_pred = disc(fake_image, img_size=img_size, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
 
 
@@ -193,7 +216,7 @@ while True:
         disc_running_loss /= config.N_PRINT_STEPS
         gen_running_loss /= config.N_PRINT_STEPS
 
-        print(f"""[ {resol:,}×{resol:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]""", end="")
+        print(f"""[ {img_size:,}×{img_size:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]""", end="")
         print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
         print(f"""[ D loss: {disc_running_loss:.3f} ]""", end="")
         print(f"""[ G loss: {gen_running_loss:.3f} ]""", end="")
@@ -202,13 +225,13 @@ while True:
 
         gen.eval()
         with torch.no_grad():
-            fake_image = gen(noise, resol=resol, alpha=alpha)
+            fake_image = gen(noise, img_size=img_size, alpha=alpha)
             fake_image = fake_image.detach().cpu()
-            grid = image_to_grid(fake_image[: 9, ...], n_cols=2 if resol == 1024 else 3, value_range=(-1, 1))
+            grid = image_to_grid(fake_image[: 9, ...], n_cols=2 if img_size == 1024 else 3, value_range=(-1, 1))
             if trans_phase:
-                save_path = IMG_DIR/f"""{resol // 2}×{resol // 2}to{resol}×{resol}/{step}.jpg"""
+                save_path = IMG_DIR/f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}/{step}.jpg"""
             else:
-                save_path = IMG_DIR/f"""{resol}×{resol}/{step}.jpg"""
+                save_path = IMG_DIR/f"""{img_size}×{img_size}/{step}.jpg"""
             save_image(grid, path=save_path)
 
         disc_running_loss = 0
@@ -216,11 +239,11 @@ while True:
 
     if (step % config.N_CKPT_STEPS == 0) or (step == n_steps):
         if trans_phase:
-            filename = f"""{resol // 2}×{resol // 2}to{resol}×{resol}_{step}.pth"""
+            filename = f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}_{step}.pth"""
         else:
-            filename = f"""{resol}×{resol}_{step}.pth"""
+            filename = f"""{img_size}×{img_size}_{step}.pth"""
         save_checkpoint(
-            resol_idx=resol_idx,
+            img_size_idx=img_size_idx,
             step=step,
             trans_phase=trans_phase,
             disc=disc,
@@ -234,13 +257,13 @@ while True:
 
     if step >= n_steps:
         if not trans_phase:
-            resol_idx += 1
-            resol = config.RESOLS[resol_idx]
-            batch_size = get_batch_size(resol)
+            img_size_idx += 1
+            img_size = config.IMG_SIZES[img_size_idx]
+            batch_size = get_batch_size(img_size)
             print(f"""batch_size = {batch_size}""")
-            n_images = get_n_images(resol)
+            n_images = get_n_images(img_size)
             n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
-            train_dl = get_dataloader(split="train", batch_size=batch_size, resol=resol)
+            train_dl = get_dataloader(split="train", batch_size=batch_size, img_size=img_size)
         train_di = iter(train_dl)
         trans_phase = not trans_phase
 

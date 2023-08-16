@@ -1,6 +1,6 @@
 import torch
 
-RESOLS = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+IMG_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
 ### Data
 DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
@@ -8,8 +8,8 @@ DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
 ### Dataloader
 N_WORKERS = 4
 AUTOCAST = True
-# RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
+# IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
+IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
 
 ### Loss
 LAMBDA = 10 # DO NOT MODIFY
@@ -32,7 +32,7 @@ N_CKPT_STEPS = 1000 # For resolution 1024×1024 only
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
 # during 800k images, etc."
-RESOL_N_IMAGES = {
+IMG_SIZE_N_IMAGES = {
     4: 200_000,
     8: 200_000,
     16: 400_000,
@@ -48,4 +48,4 @@ RESOL_N_IMAGES = {
 CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_266666.pth"
 STEP = None
 TRANS_PHASE = None
-RESOL_IDX = None
+IMG_SIZE_IDX = None
