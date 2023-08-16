@@ -25,8 +25,8 @@ ADAM_EPS = 1e-8 # DO NOT MODIFY
 N_GPUS = torch.cuda.device_count()
 MULTI_GPU = False
 N_PRINT_STEPS = 250 # For resolution 1024×1024 only
+N_CKPT_STEPS = 500 # For resolution 1024×1024 only
 # N_CKPT_STEPS = 1000 # For resolution 1024×1024 only
-N_CKPT_STEPS = 250 # For resolution 1024×1024 only
 # N_PRINT_STEPS = 1000 # For resolutions other than 1024×1024
 # N_CKPT_STEPS = 4000 # For resolutions other than 1024×1024
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
@@ -46,7 +46,7 @@ IMG_SIZE_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512to1024×1024_500.pth"
+CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512to1024×1024_750.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
