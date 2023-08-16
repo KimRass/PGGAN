@@ -150,12 +150,9 @@ while True:
         real_image = next(train_di)
     real_image = real_image.to(DEVICE)
 
-    gen.train()
-
     # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
     ### Optimize D.
-    disc_optim.zero_grad()
-
+    gen.train()
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
     noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
     with torch.autocast(
@@ -179,6 +176,7 @@ while True:
         disc_loss3 = config.LOSS_EPS * torch.mean(real_pred ** 2)
         disc_loss = disc_loss1 + disc_loss2 + disc_loss3
 
+    disc_optim.zero_grad()
     if config.AUTOCAST:
         disc_scaler.scale(disc_loss).backward()
         disc_scaler.step(disc_optim)
@@ -188,8 +186,6 @@ while True:
         disc_optim.step()
 
     ### Optimize G.
-    gen_optim.zero_grad()
-
     freeze_model(disc)
 
     with torch.autocast(
@@ -199,6 +195,7 @@ while True:
         gen_loss = -torch.mean(fake_pred)
 
 
+    gen_optim.zero_grad()
     if config.AUTOCAST:
         gen_scaler.scale(gen_loss).backward()
         gen_scaler.step(gen_optim)
