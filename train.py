@@ -141,6 +141,7 @@ while True:
         fake_pred = disc(fake_image.detach(), resol=resol, alpha=alpha)
 
         disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
+        print(disc_loss1)
         gp = get_gradient_penalty(
             disc=disc, resol=resol, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
         )
