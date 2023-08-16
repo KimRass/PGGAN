@@ -7,7 +7,7 @@ DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
 
 ### Dataloader
 N_WORKERS = 4
-AUTOCAST = False
+AUTOCAST = True
 # RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
 RESOL_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
 
@@ -25,7 +25,7 @@ ADAM_EPS = 1e-8 # DO NOT MODIFY
 N_GPUS = torch.cuda.device_count()
 MULTI_GPU = False
 # N_PRINT_STEPS = 250 # For resolution 1024×1024 only
-N_PRINT_STEPS = 100 # For resolution 1024×1024 only
+N_PRINT_STEPS = 10 # For resolution 1024×1024 only
 N_CKPT_STEPS = 1000 # For resolution 1024×1024 only
 # N_PRINT_STEPS = 1000 # For resolutions other than 1024×1024
 # N_CKPT_STEPS = 4000 # For resolutions other than 1024×1024
