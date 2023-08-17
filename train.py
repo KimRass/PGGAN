@@ -112,8 +112,12 @@ gen_scaler = GradScaler()
 ### Resume from checkpoint.
 if config.CKPT_PATH is not None:
     ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
-    disc.load_state_dict(ckpt["D"])
-    gen.load_state_dict(ckpt["G"])
+    if config.N_GPUS > 1 and config.MULTI_GPU:
+        disc.module.load_state_dict(ckpt["D"])
+        gen.module.load_state_dict(ckpt["G"])
+    else:
+        disc.load_state_dict(ckpt["D"])
+        gen.load_state_dict(ckpt["G"])
     disc_optim.load_state_dict(ckpt["D_optimizer"])
     gen_optim.load_state_dict(ckpt["G_optimizer"])
     disc_scaler.load_state_dict(ckpt["D_scaler"])
