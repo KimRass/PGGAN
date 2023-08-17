@@ -1,4 +1,5 @@
 import torch
+from pathlib import Path
 
 IMG_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
@@ -45,7 +46,7 @@ IMG_SIZE_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = "/home/ubuntu/project/cv/pggan_from_scratch/checkpoints/512×512_266666.pth"
+CKPT_PATH = Path(__file__).parent/"checkpoints/512×512_266666.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
