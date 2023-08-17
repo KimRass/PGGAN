@@ -20,7 +20,7 @@ from model import Generator, Discriminator
 from celebahq import get_dataloader
 from loss import get_gradient_penalty
 
-torch.autograd.set_detect_anomaly(True)
+# torch.autograd.set_detect_anomaly(True)
 
 print(f"""AUTOCAST = {config.AUTOCAST}""")
 print(f"""N_WORKES = {config.N_WORKERS}""")
