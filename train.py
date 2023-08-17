@@ -1,7 +1,6 @@
 # References:
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
-torch.autograd.set_detect_anomaly(True)
 
 import torch
 import torch.nn as nn
@@ -21,6 +20,8 @@ from utils import (
 from model import Generator, Discriminator
 from celebahq import get_dataloader
 from loss import get_gradient_penalty
+
+torch.autograd.set_detect_anomaly(True)
 
 print(f"""AUTOCAST = {config.AUTOCAST}""")
 print(f"""N_WORKES = {config.N_WORKERS}""")
