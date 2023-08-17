@@ -4,13 +4,13 @@ from pathlib import Path
 IMG_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
 ### Data
-DATA_DIR = "/home/user/cv/celeba_hq"
+DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
 
 ### Dataloader
-N_WORKERS = 6
+N_WORKERS = 4
 AUTOCAST = False
 # IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
-IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 3} # In my case
+IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
 
 ### Loss
 LAMBDA = 10 # DO NOT MODIFY
@@ -25,10 +25,8 @@ ADAM_EPS = 1e-8 # DO NOT MODIFY
 ### Training
 N_GPUS = torch.cuda.device_count()
 MULTI_GPU = True
-N_PRINT_STEPS = 1000 # For resolution 1024×1024 only
-N_CKPT_STEPS = 4000 # For resolution 1024×1024 only
-# N_PRINT_STEPS = 1000 # For resolutions other than 1024×1024
-# N_CKPT_STEPS = 4000 # For resolutions other than 1024×1024
+N_PRINT_STEPS = 1000
+N_CKPT_STEPS = 1000
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block
