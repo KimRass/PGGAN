@@ -209,7 +209,7 @@ while True:
 
     disc_running_loss += disc_loss1.item()
     gen_running_loss += gen_loss.item()
-    print(disc_loss.item(), gen_loss.item(), gp)
+    print(f"""{disc_loss.item():.4f}, {gen_loss.item():.4f}, {gp.item():.4f}""")
 
     if (step % config.N_PRINT_STEPS == 0) or (step == n_steps):
         disc_running_loss /= config.N_PRINT_STEPS
