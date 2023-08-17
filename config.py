@@ -24,9 +24,8 @@ ADAM_EPS = 1e-8 # DO NOT MODIFY
 ### Training
 N_GPUS = torch.cuda.device_count()
 MULTI_GPU = False
-N_PRINT_STEPS = 250 # For resolution 1024×1024 only
-N_CKPT_STEPS = 500 # For resolution 1024×1024 only
-# N_CKPT_STEPS = 1000 # For resolution 1024×1024 only
+N_PRINT_STEPS = 20 # For resolution 1024×1024 only
+N_CKPT_STEPS = 50000 # For resolution 1024×1024 only
 # N_PRINT_STEPS = 1000 # For resolutions other than 1024×1024
 # N_CKPT_STEPS = 4000 # For resolutions other than 1024×1024
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
