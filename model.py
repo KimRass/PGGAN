@@ -290,14 +290,15 @@ class Discriminator(nn.Module): # 25,444,737 parameters in total.
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
-    for img_size in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
-        alpha = 0.5
-        gen = Generator()
-        x = torch.randn(BATCH_SIZE, 512, 1, 1)
-        out = gen(x, img_size=img_size, alpha=alpha)
-        out.shape
+    # for img_size in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
+    img_size = 1024
+    alpha = 0.5
+    gen = Generator()
+    x = torch.randn(BATCH_SIZE, 512, 1, 1)
+    out = gen(x, img_size=img_size, alpha=alpha)
+    out.shape
 
-        disc = Discriminator()
-        x = torch.randn((BATCH_SIZE, 3, img_size, img_size))
-        out = disc(x, img_size=img_size, alpha=alpha)
-        out.shape
+    # disc = Discriminator()
+    # x = torch.randn((BATCH_SIZE, 3, img_size, img_size))
+    # out = disc(x, img_size=img_size, alpha=alpha)
+    # out.shape

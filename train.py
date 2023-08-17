@@ -219,7 +219,7 @@ while True:
         print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
         print(f"""[ D loss: {disc_running_loss:.3f} ]""", end="")
         print(f"""[ G loss: {gen_running_loss:.3f} ]""", end="")
-        print(f"""[ GP: {gp:.3f} ]""")
+        print(f"""[ GP: {gp.item():.3f} ]""")
         start_time = time()
 
         gen.eval()
