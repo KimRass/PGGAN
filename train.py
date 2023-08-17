@@ -1,13 +1,14 @@
 # References:
     # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/train.py
 
+torch.autograd.set_detect_anomaly(True)
+
 import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.cuda.amp import GradScaler
 from pathlib import Path
 from time import time
-from contextlib import nullcontext
 
 import config
 from utils import (
@@ -157,8 +158,8 @@ while True:
     # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
     noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
     with torch.autocast(
-        device_type=DEVICE.type, dtype=torch.float16
-    ) if config.AUTOCAST else nullcontext():
+        device_type=DEVICE.type, dtype=torch.float16, enabled=True if config.AUTOCAST else False
+    ):
         real_pred = disc(real_image, img_size=img_size, alpha=alpha)
         fake_image = gen(noise, img_size=img_size, alpha=alpha)
         fake_pred = disc(fake_image.detach(), img_size=img_size, alpha=alpha)
@@ -190,8 +191,8 @@ while True:
     freeze_model(disc)
 
     with torch.autocast(
-        device_type=DEVICE.type, dtype=torch.float16
-    ) if config.AUTOCAST else nullcontext():
+        device_type=DEVICE.type, dtype=torch.float16, enabled=True if config.AUTOCAST else False
+    ):
         fake_pred = disc(fake_image, img_size=img_size, alpha=alpha)
         gen_loss = -torch.mean(fake_pred)
 
@@ -209,7 +210,6 @@ while True:
 
     disc_running_loss += disc_loss1.item()
     gen_running_loss += gen_loss.item()
-    torch.autograd.set_detect_anomaly(True)
     print(f"""{step}, {disc_loss.item():.4f}, {gen_loss.item():.4f}, {gp.item():.4f}""")
 
     if (step % config.N_PRINT_STEPS == 0) or (step == n_steps):

@@ -68,136 +68,6 @@ class EqualLRConv2d(nn.Module):
         return x
 
 
-# "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses 1×1 convolutions."
-class ToRGB(nn.Module):
-    def __init__(self, in_channels, leakiness=LEAKINESS):
-        super().__init__()
-
-        self.leakiness = leakiness
-
-        self.in_channels = in_channels
-        self.conv = EqualLRConv2d(in_channels, 3, kernel_size=1)
-
-    def forward(self, x):
-        x = self.conv(x)
-        return x
-
-
-# "The `fromRGB` does the reverse of `toRGB`. it uses 1×1 convolutions."
-class FromRGB(nn.Module):
-    def __init__(self, out_channels, leakiness=LEAKINESS):
-        super().__init__()
-
-        self.leakiness = leakiness
-
-        self.out_channels = out_channels
-        self.conv = EqualLRConv2d(3, out_channels, kernel_size=1)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = F.leaky_relu(x, negative_slope=self.leakiness)
-        return x
-
-# "PIXELWISE FEATURE VECTOR NORMALIZATION IN GENERATOR: We normalize the feature vector in each pixel
-# to unit length in the generator after each convolutional layer."
-# "$b_{x, y} = a_{x, y} / \sqrt{1 / N \sum^{N - 1}_{j=0}(a^{j}_{x, y})^{2} + \epsilon}$, where
-# $\epsilon = 10^{-8}$, $N$ is the number of feature maps, and $a_{x, y}$ and $b_{x, y}$ are
-# the original and normalized feature vector in pixel $(x, y)$, respectively."
-def perform_pixel_norm(x, eps=1e-8):
-    x = x / torch.sqrt((x ** 2).mean(dim=1, keepdim=True)+ eps)
-    return x
-
-
-# "'2×' refer to doubling the image resolution using nearest neighbor filtering."
-def _double(x):
-    return F.interpolate(x, scale_factor=2, mode="nearest")
-
-
-class UpsampleBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, upsample=True, leakiness=LEAKINESS):
-        super().__init__()
-
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.upsample = upsample
-        self.leakiness = leakiness
-
-        if upsample:
-            self.conv1 = EqualLRConv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        else:
-            self.conv1 = EqualLRConv2d(in_channels, out_channels, kernel_size=4, padding=3)
-        self.conv2 = EqualLRConv2d(out_channels, out_channels, kernel_size=3, padding=1)
-
-    def forward(self, x):
-        ### ORDER OF LAYERS!
-        if self.upsample:
-            x = _double(x)
-        x = self.conv1(x)
-        x = F.leaky_relu(x, negative_slope=self.leakiness)
-        # "We perform pixel-wise normalization of the feature vectors after each Conv 3×3 layer
-        # in the generator."
-        x = perform_pixel_norm(x)
-        x = self.conv2(x)
-        x = F.leaky_relu(x, negative_slope=self.leakiness)
-        x = perform_pixel_norm(x)
-        return x
-
-
-def _get_depth(img_size):
-    depth = int(math.log2(img_size)) - 1
-    return depth
-
-
-class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
-    def __init__(self):
-        super().__init__()
-
-        self.block1 = UpsampleBlock(512, 512, upsample=False)
-        self.block2 = UpsampleBlock(512, 512)
-        self.block3 = UpsampleBlock(512, 512)
-        self.block4 = UpsampleBlock(512, 512)
-        self.block5 = UpsampleBlock(512, 256)
-        self.block6 = UpsampleBlock(256, 128)
-        self.block7 = UpsampleBlock(128, 64)
-        self.block8 = UpsampleBlock(64, 32)
-        self.block9 = UpsampleBlock(32, 16)
-
-        # "The last Conv 1×1 layer of the generator corresponds to the 'toRGB' block."
-        self.to_rgb1 = ToRGB(512)
-        self.to_rgb2 = ToRGB(512)
-        self.to_rgb3 = ToRGB(512)
-        self.to_rgb4 = ToRGB(512)
-        self.to_rgb5 = ToRGB(256)
-        self.to_rgb6 = ToRGB(128)
-        self.to_rgb7 = ToRGB(64)
-        self.to_rgb8 = ToRGB(32)
-        self.to_rgb9 = ToRGB(16)
-
-    def forward(self, x, img_size, alpha):
-        if img_size == 4:
-            x = self.block1(x)
-            x = self.to_rgb1(x)
-        else:
-            depth = _get_depth(img_size)
-            for d in range(1, depth):
-                x = eval(f"""self.block{d}""")(x)
-
-            skip = x.clone()
-            skip = _double(skip)
-            skip = eval(f"""self.to_rgb{depth - 1}""")(skip)
-
-            x = eval(f"""self.block{depth}""")(x)
-            x = eval(f"""self.to_rgb{depth}""")(x)
-
-            x = (1 - alpha) * skip + alpha * x
-        return x
-
-
-# "'0.5×' refer to halving the image resolution using nearest neighbor average pooling."
-def _half(x):
-    return F.avg_pool2d(x, kernel_size=2, stride=2)
-
-
 class DownsampleBlock(nn.Module):
     def __init__(self, in_channels, out_channels, downsample=True, leakiness=LEAKINESS):
         super().__init__()
@@ -243,6 +113,27 @@ class DownsampleBlock(nn.Module):
         return x
 
 
+# "The `fromRGB` does the reverse of `toRGB`. it uses 1×1 convolutions."
+class FromRGB(nn.Module):
+    def __init__(self, out_channels, leakiness=LEAKINESS):
+        super().__init__()
+
+        self.leakiness = leakiness
+
+        self.out_channels = out_channels
+        self.conv = EqualLRConv2d(3, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = F.leaky_relu(x, negative_slope=self.leakiness)
+        return x
+
+
+# "'0.5×' refer to halving the image resolution using nearest neighbor average pooling."
+def _half(x):
+    return F.avg_pool2d(x, kernel_size=2, stride=2)
+
+
 class Discriminator(nn.Module): # 25,444,737 parameters in total.
     def __init__(self):
         super().__init__()
@@ -285,6 +176,116 @@ class Discriminator(nn.Module): # 25,444,737 parameters in total.
 
             for d in range(depth - 1, 0, -1):
                 x = eval(f"""self.block{d}""")(x)
+        return x
+
+
+class UpsampleBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, upsample=True, leakiness=LEAKINESS):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.upsample = upsample
+        self.leakiness = leakiness
+
+        if upsample:
+            self.conv1 = EqualLRConv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        else:
+            self.conv1 = EqualLRConv2d(in_channels, out_channels, kernel_size=4, padding=3)
+        self.conv2 = EqualLRConv2d(out_channels, out_channels, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        ### ORDER OF LAYERS!
+        if self.upsample:
+            x = _double(x)
+        x = self.conv1(x)
+        x = F.leaky_relu(x, negative_slope=self.leakiness)
+        # "We perform pixel-wise normalization of the feature vectors after each Conv 3×3 layer
+        # in the generator."
+        x = perform_pixel_norm(x)
+        x = self.conv2(x)
+        x = F.leaky_relu(x, negative_slope=self.leakiness)
+        x = perform_pixel_norm(x)
+        return x
+
+
+# "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses 1×1 convolutions."
+class ToRGB(nn.Module):
+    def __init__(self, in_channels, leakiness=LEAKINESS):
+        super().__init__()
+
+        self.leakiness = leakiness
+
+        self.in_channels = in_channels
+        self.conv = EqualLRConv2d(in_channels, 3, kernel_size=1)
+
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+
+
+def _get_depth(img_size):
+    depth = int(math.log2(img_size)) - 1
+    return depth
+
+
+# "PIXELWISE FEATURE VECTOR NORMALIZATION IN GENERATOR: We normalize the feature vector in each pixel
+# to unit length in the generator after each convolutional layer."
+# "$b_{x, y} = a_{x, y} / \sqrt{1 / N \sum^{N - 1}_{j=0}(a^{j}_{x, y})^{2} + \epsilon}$, where
+# $\epsilon = 10^{-8}$, $N$ is the number of feature maps, and $a_{x, y}$ and $b_{x, y}$ are
+# the original and normalized feature vector in pixel $(x, y)$, respectively."
+def perform_pixel_norm(x, eps=1e-8):
+    x = x / torch.sqrt((x ** 2).mean(dim=1, keepdim=True)+ eps)
+    return x
+
+
+# "'2×' refer to doubling the image resolution using nearest neighbor filtering."
+def _double(x):
+    return F.interpolate(x, scale_factor=2, mode="nearest")
+
+
+class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
+    def __init__(self):
+        super().__init__()
+
+        self.block1 = UpsampleBlock(512, 512, upsample=False)
+        self.block2 = UpsampleBlock(512, 512)
+        self.block3 = UpsampleBlock(512, 512)
+        self.block4 = UpsampleBlock(512, 512)
+        self.block5 = UpsampleBlock(512, 256)
+        self.block6 = UpsampleBlock(256, 128)
+        self.block7 = UpsampleBlock(128, 64)
+        self.block8 = UpsampleBlock(64, 32)
+        self.block9 = UpsampleBlock(32, 16)
+
+        # "The last Conv 1×1 layer of the generator corresponds to the 'toRGB' block."
+        self.to_rgb1 = ToRGB(512)
+        self.to_rgb2 = ToRGB(512)
+        self.to_rgb3 = ToRGB(512)
+        self.to_rgb4 = ToRGB(512)
+        self.to_rgb5 = ToRGB(256)
+        self.to_rgb6 = ToRGB(128)
+        self.to_rgb7 = ToRGB(64)
+        self.to_rgb8 = ToRGB(32)
+        self.to_rgb9 = ToRGB(16)
+
+    def forward(self, x, img_size, alpha):
+        if img_size == 4:
+            x = self.block1(x)
+            x = self.to_rgb1(x)
+        else:
+            depth = _get_depth(img_size)
+            for d in range(1, depth):
+                x = eval(f"""self.block{d}""")(x)
+
+            skip = x.clone()
+            skip = _double(skip)
+            skip = eval(f"""self.to_rgb{depth - 1}""")(skip)
+
+            x = eval(f"""self.block{depth}""")(x)
+            x = eval(f"""self.to_rgb{depth}""")(x)
+
+            x = (1 - alpha) * skip + alpha * x
         return x
 
 
