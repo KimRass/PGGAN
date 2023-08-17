@@ -20,6 +20,8 @@ from model import Generator, Discriminator
 from celebahq import get_dataloader
 from loss import get_gradient_penalty
 
+torch.autograd.set_detect_anomaly(True)
+
 print(f"""AUTOCAST = {config.AUTOCAST}""")
 print(f"""N_WORKES = {config.N_WORKERS}""")
 
@@ -228,8 +230,9 @@ while True:
         with torch.no_grad():
             fake_image = gen(noise, img_size=img_size, alpha=alpha)
             fake_image = fake_image.detach().cpu()
-            # grid = image_to_grid(fake_image[: 9, ...], n_cols=2 if img_size == 1024 else 3, value_range=(-1, 1))
-            grid = image_to_grid(fake_image[: 9, ...], n_cols=3, value_range=(-1, 1))
+            grid = image_to_grid(
+                fake_image[: 9, ...], n_cols=2 if img_size == 1024 else 3, value_range=(-1, 1)
+            )
             if trans_phase:
                 save_path = IMG_DIR/f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}/{step}.jpg"""
             else:

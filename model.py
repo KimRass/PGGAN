@@ -91,6 +91,7 @@ class DownsampleBlock(nn.Module):
         # We then average these estimates over all features and spatial locations to arrive at a single value.
         # We replicate the value and concatenate it to all spatial locations and over the minibatch,
         # yielding one additional (constant) feature map."
+        print(x)
         feat_map = x.std(dim=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)
         x = torch.cat([x, feat_map.repeat(b, 1, h, w)], dim=1)
         return x
