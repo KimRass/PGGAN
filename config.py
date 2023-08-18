@@ -8,7 +8,7 @@ IMG_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 DATA_DIR = "/home/user/cv/celeba_hq"
 
 ### Dataloader
-N_WORKERS = 4
+N_WORKERS = 6
 AUTOCAST = False
 # IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
 IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 3} # In my case
@@ -25,7 +25,7 @@ ADAM_EPS = 1e-8 # DO NOT MODIFY
 
 ### Training
 N_GPUS = torch.cuda.device_count()
-MULTI_GPU = False
+MULTI_GPU = True
 N_PRINT_STEPS = 1000
 N_CKPT_STEPS = 4000
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
