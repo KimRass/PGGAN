@@ -8,7 +8,7 @@ DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
 # DATA_DIR = "/home/user/cv/celeba_hq"
 
 ### Dataloader
-N_WORKERS = 6
+N_WORKERS = 4
 AUTOCAST = False
 # IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 16, 256: 14, 512: 6, 1024: 3} # In the paper
 IMG_SIZE_BATCH_SIZE = {4: 16, 8: 16, 16: 16, 32: 16, 64: 16, 128: 9, 256: 3, 512: 3, 1024: 2} # In my case
