@@ -4,7 +4,8 @@ from pathlib import Path
 IMG_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
 ### Data
-DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
+# DATA_DIR = "/home/ubuntu/project/cv/celebahq/celeba_hq"
+DATA_DIR = "/home/user/cv/celeba_hq"
 
 ### Dataloader
 N_WORKERS = 4
