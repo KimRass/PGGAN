@@ -46,7 +46,7 @@ IMG_SIZE_N_IMAGES = {
 }
 
 ### Checkpoint
-CKPT_PATH = Path(__file__).parent/"checkpoints/512×512_266666.pth"
+CKPT_PATH = Path(__file__).parent/"checkpoints/512×512_520000.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
