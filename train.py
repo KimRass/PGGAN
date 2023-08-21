@@ -128,8 +128,7 @@ if __name__ == "__main__":
 
     step = config.STEP if config.STEP is not None else ckpt["step"]
     trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
-    img_size_idx = config.IMG_SIZE_IDX if config.IMG_SIZE_IDX is not None else ckpt["resolution_index"]
-    # img_size_idx = config.IMG_SIZE_IDX if config.IMG_SIZE_IDX is not None else ckpt["image_size_index"]
+    img_size_idx = config.IMG_SIZE_IDX if config.IMG_SIZE_IDX is not None else ckpt["image_size_index"]
     img_size = config.IMG_SIZES[img_size_idx]
     n_images = get_n_images(img_size)
     batch_size = get_batch_size(img_size)
