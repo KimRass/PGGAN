@@ -40,13 +40,12 @@ IMG_SIZE_N_IMAGES = {
     64: 800_000,
     128: 800_000,
     256: 800_000,
-    # 512: 800_000,
-    512: 1_600_000,
+    512: 2_000_000,
     1024: 800_000,
 }
 
 ### Checkpoint
-CKPT_PATH = Path(__file__).parent/"checkpoints/512×512_520000.pth"
+CKPT_PATH = Path(__file__).parent/"checkpoints/512×512_524000.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
