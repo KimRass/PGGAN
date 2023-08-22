@@ -157,7 +157,10 @@ if __name__ == "__main__":
         disc_scaler.load_state_dict(ckpt["D_scaler"])
         gen_scaler.load_state_dict(ckpt["G_scaler"])
 
-        best_avg_swd = ckpt["average_swd"]
+        if "average_swd" in ckpt:
+            best_avg_swd = ckpt["average_swd"]
+        else:
+            best_avg_swd = 0
     else:
         best_avg_swd = 0
 
