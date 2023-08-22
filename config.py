@@ -27,7 +27,7 @@ ADAM_EPS = 1e-8 # DO NOT MODIFY
 N_GPUS = torch.cuda.device_count()
 MULTI_GPU = False
 N_PRINT_STEPS = 1000
-N_CKPT_STEPS = 4000
+N_VAL_STEPS = 1000
 # "We start with 4×4 resolution and train the networks until we have shown the discriminator
 # 800k real images in total. We then alternate between two phases: fade in the first 3-layer block
 # during the next 800k images, stabilize the networks for 800k images, fade in the next 3-layer block

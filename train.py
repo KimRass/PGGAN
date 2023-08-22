@@ -279,7 +279,7 @@ if __name__ == "__main__":
             disc_running_loss = 0
             gen_running_loss = 0
 
-        if (step % config.N_CKPT_STEPS == 0) or (step == n_steps):
+        if (step % config.N_VAL_STEPS == 0) or (step == n_steps):
             avg_swd = validate(gen=gen, val_dl=val_dl, device=DEVICE)
             if avg_swd > best_avg_swd:
                 if trans_phase:
