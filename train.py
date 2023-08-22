@@ -303,7 +303,8 @@ if __name__ == "__main__":
                     gen_scaler=gen_scaler,
                     save_path=cur_save_path,
                 )
-                if prev_save_path.exists():
+                prev_save_path = Path(prev_save_path)
+                if prev_save_path:
                     prev_save_path.unlink()
                 print(f"""Saved checkpoint.""")
 
