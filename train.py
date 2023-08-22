@@ -7,6 +7,7 @@ from torch.optim import Adam
 from torch.cuda.amp import GradScaler
 from pathlib import Path
 from time import time
+from tqdm.auto import tqdm
 
 import config
 from utils import (
@@ -19,6 +20,7 @@ from utils import (
 from model import Generator, Discriminator
 from celebahq import get_dataloader
 from loss import get_gradient_penalty
+from evaluate import get_swd
 
 # torch.autograd.set_detect_anomaly(True)
 
@@ -50,8 +52,35 @@ def get_alpha(step, n_steps, trans_phase):
     return alpha
 
 
+@torch.no_grad()
+def validate(gen, val_dl, device):
+    gen.eval()
+    sum_swd = 0
+    for real_image in tqdm(val_dl):
+        real_image = real_image.to(device)
+        noise = torch.randn(batch_size, 512, 1, 1, device=device)
+        fake_image = gen(noise, img_size=img_size, alpha=alpha)
+
+        swd = get_swd(real_image, fake_image, device=device)
+        sum_swd += swd.item()
+    avg_swd = sum_swd / len(val_dl)
+    print(f"""Average SWD: {avg_swd: .3f}""")
+    gen.train()
+    return avg_swd
+
+
 def save_checkpoint(
-    img_size_idx, step, trans_phase, disc, gen, disc_optim, gen_optim, disc_scaler, gen_scaler, save_path
+    img_size_idx,
+    step,
+    trans_phase,
+    disc,
+    gen,
+    disc_optim,
+    gen_optim,
+    disc_scaler,
+    gen_scaler,
+    avg_swd,
+    save_path,
 ):
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -63,6 +92,7 @@ def save_checkpoint(
         "G_optimizer": gen_optim.state_dict(),
         "D_scaler": disc_scaler.state_dict(),
         "G_scaler": gen_scaler.state_dict(),
+        "average_swd": avg_swd,
     }
     if config.N_GPUS > 1 and config.MULTI_GPU:
         ckpt["D"] = disc.module.state_dict()
@@ -115,6 +145,7 @@ if __name__ == "__main__":
     ### Resume from checkpoint.
     if config.CKPT_PATH is not None:
         ckpt = torch.load(config.CKPT_PATH, map_location=DEVICE)
+
         if config.N_GPUS > 1 and config.MULTI_GPU:
             disc.module.load_state_dict(ckpt["D"])
             gen.module.load_state_dict(ckpt["G"])
@@ -125,6 +156,10 @@ if __name__ == "__main__":
         gen_optim.load_state_dict(ckpt["G_optimizer"])
         disc_scaler.load_state_dict(ckpt["D_scaler"])
         gen_scaler.load_state_dict(ckpt["G_scaler"])
+
+        best_avg_swd = ckpt["average_swd"]
+    else:
+        best_avg_swd = 0
 
     step = config.STEP if config.STEP is not None else ckpt["step"]
     trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
@@ -140,8 +175,8 @@ if __name__ == "__main__":
 
     train_dl = get_dataloader(split="train", batch_size=batch_size, img_size=img_size)
     train_di = iter(train_dl)
+    val_dl = get_dataloader(split="val", batch_size=batch_size, img_size=img_size)
 
-    disc.train()
     disc_running_loss = 0
     gen_running_loss = 0
     start_time = time()
@@ -158,7 +193,6 @@ if __name__ == "__main__":
 
         # "We alternate between optimizing the generator and discriminator on a per-minibatch basis."
         ### Optimize D.
-        gen.train()
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(
@@ -237,28 +271,38 @@ if __name__ == "__main__":
                 else:
                     save_path = IMG_DIR/f"""{img_size}×{img_size}/{step}.jpg"""
                 save_image(grid, path=save_path)
+            gen.train()
 
             disc_running_loss = 0
             gen_running_loss = 0
 
         if (step % config.N_CKPT_STEPS == 0) or (step == n_steps):
-            if trans_phase:
-                filename = f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}_{step}.pth"""
-            else:
-                filename = f"""{img_size}×{img_size}_{step}.pth"""
-            save_checkpoint(
-                img_size_idx=img_size_idx,
-                step=step,
-                trans_phase=trans_phase,
-                disc=disc,
-                gen=gen,
-                disc_optim=disc_optim,
-                gen_optim=gen_optim,
-                disc_scaler=disc_scaler,
-                gen_scaler=gen_scaler,
-                save_path=CKPT_DIR/filename,
-            )
-            print(f"""Saved checkpoint.""")
+            avg_swd = validate(gen=gen, val_dl=val_dl, device=DEVICE)
+            if avg_swd > best_avg_swd:
+                if trans_phase:
+                    cur_save_path = CKPT_DIR/\
+                        f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}_{step}.pth"""
+                else:
+                    cur_save_path = CKPT_DIR/f"""{img_size}×{img_size}_{step}.pth"""
+                save_checkpoint(
+                    img_size_idx=img_size_idx,
+                    step=step,
+                    trans_phase=trans_phase,
+                    avg_swd=avg_swd,
+                    disc=disc,
+                    gen=gen,
+                    disc_optim=disc_optim,
+                    gen_optim=gen_optim,
+                    disc_scaler=disc_scaler,
+                    gen_scaler=gen_scaler,
+                    save_path=cur_save_path,
+                )
+                if prev_save_path.exists():
+                    prev_save_path.unlink()
+                print(f"""Saved checkpoint.""")
+
+                best_avg_swd = avg_swd
+                prev_save_path = cur_save_path
 
         if step >= n_steps:
             if not trans_phase:
@@ -273,3 +317,4 @@ if __name__ == "__main__":
             trans_phase = not trans_phase
 
             step = 0
+            best_avg_swd = 0
