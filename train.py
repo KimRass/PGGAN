@@ -159,10 +159,13 @@ if __name__ == "__main__":
 
         if "average_swd" in ckpt:
             best_avg_swd = ckpt["average_swd"]
+            prev_save_path = config.CKPT_PATH
         else:
             best_avg_swd = 0
+            prev_save_path = ""
     else:
         best_avg_swd = 0
+        prev_save_path = ""
 
     step = config.STEP if config.STEP is not None else ckpt["step"]
     trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
