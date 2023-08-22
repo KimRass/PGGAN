@@ -162,10 +162,10 @@ if __name__ == "__main__":
             prev_save_path = config.CKPT_PATH
         else:
             best_avg_swd = 0
-            prev_save_path = ""
+            prev_save_path = ".pth"
     else:
         best_avg_swd = 0
-        prev_save_path = ""
+        prev_save_path = ".pth"
 
     step = config.STEP if config.STEP is not None else ckpt["step"]
     trans_phase = config.TRANS_PHASE if config.TRANS_PHASE is not None else ckpt["transition_phase"]
@@ -304,7 +304,7 @@ if __name__ == "__main__":
                     save_path=cur_save_path,
                 )
                 prev_save_path = Path(prev_save_path)
-                if prev_save_path:
+                if prev_save_path.exists():
                     prev_save_path.unlink()
                 print(f"""Saved checkpoint.""")
 
