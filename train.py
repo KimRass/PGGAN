@@ -284,7 +284,7 @@ if __name__ == "__main__":
 
         if (step % config.N_VAL_STEPS == 0) or (step == n_steps):
             avg_swd = validate(gen=gen, val_dl=val_dl, device=DEVICE)
-            if avg_swd > best_avg_swd:
+            if avg_swd < best_avg_swd:
                 if trans_phase:
                     cur_save_path = CKPT_DIR/\
                         f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}_{step}.pth"""
