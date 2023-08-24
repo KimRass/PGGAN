@@ -25,6 +25,10 @@ $$\mathcal{L}_{GP} = \lambda \mathbb{E}_{\hat{x} \sim \mathbb{P}_{\hat{x}}}\Big[
 | 512×512 to 1,024×1,024 | - | - | - | - |
 | 1,024×1,024 | - | - | - |
 
+# Pre-trained Model
+- '512×512_664000.pth'
+  - Average SWD: 1559.362
+
 # Research
 ## 23.08.03
 - 이전까지는 Celeb-A HQ의 Training set에 대해 Mean과 Std를 계산해서 이걸 가지고 Normalize했습니다.
