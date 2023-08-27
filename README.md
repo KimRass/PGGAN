@@ -5,8 +5,8 @@ $$\mathcal{L}_{GP} = \lambda \mathbb{E}_{\hat{x} \sim \mathbb{P}_{\hat{x}}}\Big[
 # Training
 - Number of training images (including duplicates): 800,000 for each resolution
 
-| Resolution | Batch size | Time | Number of steps | Total time |
-| - | - | - | - | - |
+| Resolution | Batch size | Time | Number of steps | Total time | Average SWD |
+| - | - | - | - | - | - |
 | 4×4 | 16 |  | 50,000 |  |
 | 4×4 to 8×8 | 16 |  | 50,000 |  |
 | 8×8 | 16 |  | 50,000 |  |
@@ -21,7 +21,7 @@ $$\mathcal{L}_{GP} = \lambda \mathbb{E}_{\hat{x} \sim \mathbb{P}_{\hat{x}}}\Big[
 | 128×128 to 256×256 | 3 |  / 1,000 steps | 266,666 |
 | 256×256 | 3 |  / 1,000 steps | 266,666 |
 | 256×256 to 512×512 | 3 | 0:14:58 / 1,000 steps | 266,666 | 66:30:00 |
-| 512×512 | 3 | 0:15:58 / 1,000 steps | 266,666 | 66:30:00 |
+| 512×512 | 3 | 0:15:58 / 1,000 steps | 266,666 | 66:30:00 | 1559.362 |
 | 512×512 to 1,024×1,024 | - | - | - | - |
 | 1,024×1,024 | - | - | - |
 
@@ -71,3 +71,5 @@ Traceback (most recent call last):
 RuntimeError: Function 'DivBackward0' returned nan values in its 0th output.
 ```
 - `# feat_map = x.std(dim=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)`에서 발생한 것으로 생각돼 `feat_map = x.std(dim=0, correction=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)`으로 수정해봤지만 에러가 여전히 발생하는 것을 확인했습니다.
+
+# References

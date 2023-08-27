@@ -54,6 +54,7 @@ def get_alpha(step, n_steps, trans_phase):
 
 @torch.no_grad()
 def validate(gen, val_dl, device):
+    print(f"""Validating...""")
     gen.eval()
     sum_swd = 0
     for real_image in tqdm(val_dl):
