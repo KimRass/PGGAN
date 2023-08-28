@@ -1,6 +1,5 @@
 # References:
     # https://engineer-mole.tistory.com/m/52
-    # https://arxiv.org/pdf/1704.00028.pdf
 
 import torch
 

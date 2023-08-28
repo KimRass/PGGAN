@@ -48,3 +48,6 @@ CKPT_PATH = Path(__file__).parent/"checkpoints/512×512_736000.pth"
 STEP = None
 TRANS_PHASE = None
 IMG_SIZE_IDX = None
+
+### Pre-trained Model
+PRETRAINED = "/home/ubuntu/project/cv/pggan_from_scratch/pretrained/pggan_512.pth"
