@@ -1,4 +1,6 @@
 import torch
+import torchvision.transforms.functional as TF
+from torchvision.utils import make_grid
 from pathlib import Path
 from time import time
 from tqdm.auto import tqdm
@@ -44,7 +46,11 @@ if __name__ == "__main__":
             fake_image = gen(noise, img_size=args.img_size, alpha=1)
 
             fake_image = fake_image.detach().cpu()
-            grid = image_to_grid(fake_image, n_cols=1, value_range=(-1, 1))
+            # grid = image_to_grid(fake_image, n_cols=1, value_range=(-1, 1))
+            grid = make_grid(
+                fake_image, nrow=1, padding=0, normalize=True, value_range=(-1, 1), pad_value=1,
+            )
+            grid = TF.to_pil_image(grid)
             save_path = Path(__file__).parent/\
                 f"""generated_images/{args.img_size}×{args.img_size}/{idx}.jpg"""
             save_image(grid, path=save_path)
