@@ -2,15 +2,11 @@ import torch
 import torchvision.transforms.functional as TF
 from torchvision.utils import make_grid
 from pathlib import Path
-from time import time
 from tqdm.auto import tqdm
 import argparse
 
 import config
-from utils import (
-    image_to_grid,
-    save_image,
-)
+from utils import save_image
 from model import Generator
 
 
@@ -44,14 +40,12 @@ if __name__ == "__main__":
         for idx in tqdm(range(args.n_images)):
             noise = torch.randn(9, 512, 1, 1, device=DEVICE)
             fake_image = gen(noise, img_size=args.img_size, alpha=1)
-            print(fake_image.min(), fake_image.max())
 
             fake_image = fake_image.detach().cpu()
-            grid = image_to_grid(fake_image, n_cols=3, value_range=(-1, 1))
-            # grid = make_grid(
-            #     fake_image, nrow=3, padding=0, normalize=True, value_range=(-1, 1), pad_value=1,
-            # )
-            # grid = TF.to_pil_image(grid)
+            grid = make_grid(
+                fake_image, nrow=3, padding=0, normalize=True, value_range=(-1, 1), pad_value=1,
+            )
+            grid = TF.to_pil_image(grid)
             save_path = Path(__file__).parent/\
                 f"""generated_images/{args.img_size}×{args.img_size}/{idx}.jpg"""
             save_image(grid, path=save_path)
