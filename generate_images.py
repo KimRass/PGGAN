@@ -42,15 +42,16 @@ if __name__ == "__main__":
     gen.eval()
     with torch.no_grad():
         for idx in tqdm(range(args.n_images)):
-            noise = torch.randn(1, 512, 1, 1, device=DEVICE)
+            noise = torch.randn(9, 512, 1, 1, device=DEVICE)
             fake_image = gen(noise, img_size=args.img_size, alpha=1)
+            print(fake_image.min(), fake_image.max())
 
             fake_image = fake_image.detach().cpu()
-            # grid = image_to_grid(fake_image, n_cols=1, value_range=(-1, 1))
-            grid = make_grid(
-                fake_image, nrow=1, padding=0, normalize=True, value_range=(-1, 1), pad_value=1,
-            )
-            grid = TF.to_pil_image(grid)
+            grid = image_to_grid(fake_image, n_cols=3, value_range=(-1, 1))
+            # grid = make_grid(
+            #     fake_image, nrow=3, padding=0, normalize=True, value_range=(-1, 1), pad_value=1,
+            # )
+            # grid = TF.to_pil_image(grid)
             save_path = Path(__file__).parent/\
                 f"""generated_images/{args.img_size}×{args.img_size}/{idx}.jpg"""
             save_image(grid, path=save_path)
