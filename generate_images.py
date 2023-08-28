@@ -45,5 +45,6 @@ if __name__ == "__main__":
 
             fake_image = fake_image.detach().cpu()
             grid = image_to_grid(fake_image, n_cols=1, value_range=(-1, 1))
-            save_path = Path(__file__).parent/f"""generated_images/{args.img_size}×{args.img_size}/{idx}.jpg"""
-            save_image(grid, path=Path(__file__).parent/f"""generated_images/""")
+            save_path = Path(__file__).parent/\
+                f"""generated_images/{args.img_size}×{args.img_size}/{idx}.jpg"""
+            save_image(grid, path=save_path)
