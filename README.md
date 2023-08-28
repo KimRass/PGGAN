@@ -1,6 +1,5 @@
 # Paper Reading
 - [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://arxiv.org/pdf/1710.10196.pdf)
-$$\mathcal{L}_{GP} = \lambda \mathbb{E}_{\hat{x} \sim \mathbb{P}_{\hat{x}}}\Big[(\Vert \nabla_{\hat{x}}D(\hat{x}) \Vert_{2} - 1)^{2}\Big]$$
 
 # Training
 - Number of training images (including duplicates): 800,000 for each resolution
@@ -26,7 +25,7 @@ $$\mathcal{L}_{GP} = \lambda \mathbb{E}_{\hat{x} \sim \mathbb{P}_{\hat{x}}}\Big[
 | 1,024×1,024 | - | - | - |
 
 # Pre-trained Model
-- '512×512_664000.pth'
+- [pggan_512.pth](https://drive.google.com/file/d/1bxuY4w8R2u4kvKvI9DY32lTQhMn8mVY_/view?usp=sharing)
   - Average SWD: 1559.362
 
 # Research
