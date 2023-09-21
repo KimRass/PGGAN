@@ -27,13 +27,13 @@ class CelebAHQDataset(Dataset):
             # T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269)),
         ])
 
+    def __len__(self):
+        return len(self.img_paths)
+
     def __getitem__(self, idx):
         image = Image.open(self.img_paths[idx]).convert("RGB")
         image = self.transformer(image)
         return image
-
-    def __len__(self):
-        return len(self.img_paths)
 
 
 def get_dataloader(split, batch_size, img_size):
