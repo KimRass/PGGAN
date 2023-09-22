@@ -54,7 +54,7 @@ def get_alpha(step, n_steps, trans_phase):
 
 @torch.no_grad()
 def validate(gen, val_dl, device):
-    print(f"""Validating...""")
+    print(f"Validating...")
     gen.eval()
     sum_swd = 0
     for real_image in tqdm(val_dl):
@@ -65,7 +65,7 @@ def validate(gen, val_dl, device):
         swd = get_swd(real_image, fake_image, device=device)
         sum_swd += swd.item()
     avg_swd = sum_swd / len(val_dl)
-    print(f"""Average SWD: {avg_swd: .3f}""")
+    print(f"Average SWD: {avg_swd: .3f}")
     gen.train()
     return avg_swd
 
@@ -106,8 +106,8 @@ def save_checkpoint(
 
 
 if __name__ == "__main__":
-    print(f"""AUTOCAST = {config.AUTOCAST}""")
-    print(f"""N_WORKES = {config.N_WORKERS}""")
+    print(f"AUTOCAST = {config.AUTOCAST}")
+    print(f"N_WORKES = {config.N_WORKERS}")
 
     ROOT_DIR = Path(__file__).parent
     CKPT_DIR = ROOT_DIR/"checkpoints"
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             disc = nn.DataParallel(disc)
             gen = nn.DataParallel(gen)
 
-            print(f"""Using {config.N_GPUS} GPUs.""")
+            print(f"Using {config.N_GPUS} GPUs.")
         else:
             print("Using single GPU.")
     else:
@@ -174,11 +174,12 @@ if __name__ == "__main__":
     img_size = config.IMG_SIZES[img_size_idx]
     n_images = get_n_images(img_size)
     batch_size = get_batch_size(img_size)
-    print(f"""batch_size = {batch_size}""")
+    print(f"batch_size = {batch_size}")
     n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
     if config.CKPT_PATH is not None:
-        print(f"""Resuming from resolution {img_size:,}×{img_size:,} and step {step:,}/{n_steps:,}.""", end=" ")
-        print(f"""(Transition phase: {trans_phase})""")
+        print(f"Resuming from resolution {img_size:,}×{img_size:,}", end="")
+        print(f" and step {step:,}/{n_steps:,}.", end="")
+        print(f" (Transition phase: {trans_phase})")
 
     train_dl = get_dataloader(split="train", batch_size=batch_size, img_size=img_size)
     train_di = iter(train_dl)
@@ -211,7 +212,11 @@ if __name__ == "__main__":
 
             disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
             gp = get_gradient_penalty(
-                disc=disc, img_size=img_size, alpha=alpha, real_image=real_image, fake_image=fake_image.detach()
+                disc=disc,
+                img_size=img_size,
+                alpha=alpha,
+                real_image=real_image,
+                fake_image=fake_image.detach(),
             )
 
             disc_loss2 = config.LAMBDA * gp
@@ -259,11 +264,11 @@ if __name__ == "__main__":
             disc_running_loss /= config.N_PRINT_STEPS
             gen_running_loss /= config.N_PRINT_STEPS
 
-            print(f"""[ {img_size:,}×{img_size:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]""", end="")
-            print(f"""[ {get_elapsed_time(start_time)} ]""", end="")
-            print(f"""[ D loss: {disc_running_loss:.3f} ]""", end="")
-            print(f"""[ G loss: {gen_running_loss:.3f} ]""", end="")
-            print(f"""[ GP: {gp.item():.3f} ]""")
+            print(f"[ {img_size:,}×{img_size:,} ][ {step:,}/{n_steps:,} ][ {alpha:.3f} ]", end="")
+            print(f"[ {get_elapsed_time(start_time)} ]", end="")
+            print(f"[ D loss: {disc_running_loss:.3f} ]", end="")
+            print(f"[ G loss: {gen_running_loss:.3f} ]", end="")
+            print(f"[ GP: {gp.item():.3f} ]")
             start_time = time()
 
             gen.eval()
@@ -274,9 +279,9 @@ if __name__ == "__main__":
                     fake_image[: 9, ...], n_cols=2 if img_size == 1024 else 3, value_range=(-1, 1)
                 )
                 if trans_phase:
-                    save_path = IMG_DIR/f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}/{step}.jpg"""
+                    save_path = IMG_DIR/f"{img_size // 2}×{img_size // 2}to{img_size}×{img_size}/{step}.jpg"
                 else:
-                    save_path = IMG_DIR/f"""{img_size}×{img_size}/{step}.jpg"""
+                    save_path = IMG_DIR/f"{img_size}×{img_size}/{step}.jpg"
                 save_image(grid, path=save_path)
             gen.train()
 
@@ -288,9 +293,9 @@ if __name__ == "__main__":
             if avg_swd < best_avg_swd:
                 if trans_phase:
                     cur_save_path = CKPT_DIR/\
-                        f"""{img_size // 2}×{img_size // 2}to{img_size}×{img_size}_{step}.pth"""
+                        f"{img_size // 2}×{img_size // 2}to{img_size}×{img_size}_{step}.pth"
                 else:
-                    cur_save_path = CKPT_DIR/f"""{img_size}×{img_size}_{step}.pth"""
+                    cur_save_path = CKPT_DIR/f"{img_size}×{img_size}_{step}.pth"
                 save_checkpoint(
                     img_size_idx=img_size_idx,
                     step=step,
@@ -307,7 +312,7 @@ if __name__ == "__main__":
                 prev_save_path = Path(prev_save_path)
                 if prev_save_path.exists():
                     prev_save_path.unlink()
-                print(f"""Saved checkpoint.""")
+                print(f"Saved checkpoint.")
 
                 best_avg_swd = avg_swd
                 prev_save_path = cur_save_path
@@ -317,7 +322,7 @@ if __name__ == "__main__":
                 img_size_idx += 1
                 img_size = config.IMG_SIZES[img_size_idx]
                 batch_size = get_batch_size(img_size)
-                print(f"""batch_size = {batch_size}""")
+                print(f"batch_size = {batch_size}")
                 n_images = get_n_images(img_size)
                 n_steps = get_n_steps(n_images=n_images, batch_size=batch_size)
                 train_dl = get_dataloader(split="train", batch_size=batch_size, img_size=img_size)
