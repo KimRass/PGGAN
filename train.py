@@ -78,8 +78,8 @@ def save_checkpoint(
     gen,
     disc_optim,
     gen_optim,
-    disc_scaler,
-    gen_scaler,
+    scaler,
+    scaler,
     avg_swd,
     save_path,
 ):
@@ -91,8 +91,8 @@ def save_checkpoint(
         "transition_phase": trans_phase,
         "D_optimizer": disc_optim.state_dict(),
         "G_optimizer": gen_optim.state_dict(),
-        "D_scaler": disc_scaler.state_dict(),
-        "G_scaler": gen_scaler.state_dict(),
+        "D_scaler": scaler.state_dict(),
+        "G_scaler": scaler.state_dict(),
         "average_swd": avg_swd,
     }
     if config.N_GPUS > 1 and config.MULTI_GPU:
@@ -106,7 +106,7 @@ def save_checkpoint(
 
 
 if __name__ == "__main__":
-    print(f"AUTOCAST = {config.AUTOCAST}")
+    print(f"AMP = {config.AMP}")
     print(f"N_WORKES = {config.N_WORKERS}")
 
     ROOT_DIR = Path(__file__).parent
@@ -134,14 +134,19 @@ if __name__ == "__main__":
     # generator output at any given point during the training, we use an exponential running average
     # for the weights of the generator with decay $0.999$."
     disc_optim = Adam(
-        params=disc.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS
+        params=disc.parameters(),
+        lr=config.LR,
+        betas=(config.BETA1, config.BETA2),
+        eps=config.ADAM_EPS,
     )
     gen_optim = Adam(
-        params=gen.parameters(), lr=config.LR, betas=(config.BETA1, config.BETA2), eps=config.ADAM_EPS
+        params=gen.parameters(),
+        lr=config.LR,
+        betas=(config.BETA1, config.BETA2),
+        eps=config.ADAM_EPS,
     )
 
-    disc_scaler = GradScaler()
-    gen_scaler = GradScaler()
+    scaler = GradScaler()
 
     ### Resume from checkpoint.
     if config.CKPT_PATH is not None:
@@ -155,8 +160,7 @@ if __name__ == "__main__":
             gen.load_state_dict(ckpt["G"])
         disc_optim.load_state_dict(ckpt["D_optimizer"])
         gen_optim.load_state_dict(ckpt["G_optimizer"])
-        disc_scaler.load_state_dict(ckpt["D_scaler"])
-        gen_scaler.load_state_dict(ckpt["G_scaler"])
+        scaler.load_state_dict(ckpt["scaler"])
 
         if "average_swd" in ckpt:
             best_avg_swd = ckpt["average_swd"]
@@ -204,13 +208,14 @@ if __name__ == "__main__":
         # "Our latent vectors correspond to random points on a 512-dimensional hypersphere."
         noise = torch.randn(batch_size, 512, 1, 1, device=DEVICE)
         with torch.autocast(
-            device_type=DEVICE.type, dtype=torch.float16, enabled=True if config.AUTOCAST else False
+            device_type=DEVICE.type, dtype=torch.float16, enabled=True if config.AMP else False
         ):
             real_pred = disc(real_image, img_size=img_size, alpha=alpha)
             fake_image = gen(noise, img_size=img_size, alpha=alpha)
             fake_pred = disc(fake_image.detach(), img_size=img_size, alpha=alpha)
 
-            disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
+            # disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
+            disc_loss1 = (-torch.mean(real_pred) + torch.mean(fake_pred)) / 2
             gp = get_gradient_penalty(
                 disc=disc,
                 img_size=img_size,
@@ -229,10 +234,9 @@ if __name__ == "__main__":
             disc_loss = disc_loss1 + disc_loss2 + disc_loss3
 
         disc_optim.zero_grad()
-        if config.AUTOCAST:
-            disc_scaler.scale(disc_loss).backward()
-            disc_scaler.step(disc_optim)
-            disc_scaler.update()
+        if config.AMP:
+            scaler.scale(disc_loss).backward()
+            scaler.step(disc_optim)
         else:
             disc_loss.backward()
             disc_optim.step()
@@ -241,21 +245,23 @@ if __name__ == "__main__":
         freeze_model(disc)
 
         with torch.autocast(
-            device_type=DEVICE.type, dtype=torch.float16, enabled=True if config.AUTOCAST else False
+            device_type=DEVICE.type, dtype=torch.float16, enabled=True if config.AMP else False
         ):
             fake_pred = disc(fake_image, img_size=img_size, alpha=alpha)
             gen_loss = -torch.mean(fake_pred)
 
         gen_optim.zero_grad()
-        if config.AUTOCAST:
-            gen_scaler.scale(gen_loss).backward()
-            gen_scaler.step(gen_optim)
-            gen_scaler.update()
+        if config.AMP:
+            scaler.scale(gen_loss).backward()
+            scaler.step(gen_optim)
         else:
             gen_loss.backward()
             gen_optim.step()
 
         unfreeze_model(disc)
+
+        if config.AMP:
+            scaler.update()
 
         disc_running_loss += disc_loss1.item()
         gen_running_loss += gen_loss.item()
@@ -305,8 +311,8 @@ if __name__ == "__main__":
                     gen=gen,
                     disc_optim=disc_optim,
                     gen_optim=gen_optim,
-                    disc_scaler=disc_scaler,
-                    gen_scaler=gen_scaler,
+                    scaler=scaler,
+                    scaler=scaler,
                     save_path=cur_save_path,
                 )
                 prev_save_path = Path(prev_save_path)
