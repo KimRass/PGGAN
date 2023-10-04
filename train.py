@@ -214,8 +214,7 @@ if __name__ == "__main__":
             fake_image = gen(noise, img_size=img_size, alpha=alpha)
             fake_pred = disc(fake_image.detach(), img_size=img_size, alpha=alpha)
 
-            # disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
-            disc_loss1 = (-torch.mean(real_pred) + torch.mean(fake_pred)) / 2
+            disc_loss1 = -torch.mean(real_pred) + torch.mean(fake_pred)
             gp = get_gradient_penalty(
                 disc=disc,
                 img_size=img_size,
