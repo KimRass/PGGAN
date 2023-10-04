@@ -79,7 +79,6 @@ def save_checkpoint(
     disc_optim,
     gen_optim,
     scaler,
-    scaler,
     avg_swd,
     save_path,
 ):
@@ -91,8 +90,7 @@ def save_checkpoint(
         "transition_phase": trans_phase,
         "D_optimizer": disc_optim.state_dict(),
         "G_optimizer": gen_optim.state_dict(),
-        "D_scaler": scaler.state_dict(),
-        "G_scaler": scaler.state_dict(),
+        "scaler": scaler.state_dict(),
         "average_swd": avg_swd,
     }
     if config.N_GPUS > 1 and config.MULTI_GPU:
@@ -310,7 +308,6 @@ if __name__ == "__main__":
                     gen=gen,
                     disc_optim=disc_optim,
                     gen_optim=gen_optim,
-                    scaler=scaler,
                     scaler=scaler,
                     save_path=cur_save_path,
                 )
