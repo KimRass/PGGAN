@@ -1,7 +1,7 @@
-# Paper Reading
-- [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://arxiv.org/pdf/1710.10196.pdf)
-
-# Training
+# 'PGGAN' (Karras et al., 2018) implementation from scratch in PyTorch
+## Paper Reading
+- [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://github.com/KimRass/PGGAN/blob/main/progressive_growing_of_gans_for_improved_quality_stability_and_variation.pdf)
+## Training
 - Number of training images (including duplicates): 800,000 for each resolution
 
 | Resolution | Batch size | Time | Number of steps | Total time | Average SWD |
@@ -23,19 +23,17 @@
 | 512×512 | 3 | 0:15:58 / 1,000 steps | 266,666 | 66:30:00 | 1559.362 |
 | 512×512 to 1,024×1,024 | - | - | - | - |
 | 1,024×1,024 | - | - | - |
-
-# Pre-trained Model
+## Pre-trained Model
 - [pggan_512.pth](https://drive.google.com/file/d/1bxuY4w8R2u4kvKvI9DY32lTQhMn8mVY_/view?usp=sharing)
   - Average SWD: 1559.362
-
-# Research
-## 23.08.03
+## Research
+### Normalization
 - 이전까지는 Celeb-A HQ의 Training set에 대해 Mean과 Std를 계산해서 이걸 가지고 Normalize했습니다.
     - `T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269))`
 - 논문에서는 "We represent training and generated images in $[-1, 1]$."라는 표현이 있는 것을 알고 있었으나 이를 간과하고 있었습니다.
 - 다음과 같이 코드를 수정했습니다.
     - `T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))`
-## 23.08.17
+### 'DivBackward0' error
 - 해상도 1,024×1,024로 진입하면서 처음으로 다음 에러가 발생하는 것을 `torch.autograd.set_detect_anomaly(True)`을 통해 확인했습니다.
 ```
 /home/ubuntu/.local/lib/python3.8/site-packages/torch/autograd/__init__.py:200: UserWarning: Error detected in DivBackward0. Traceback of forward call that caused the error:
@@ -69,6 +67,4 @@ Traceback (most recent call last):
     Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
 RuntimeError: Function 'DivBackward0' returned nan values in its 0th output.
 ```
-- `# feat_map = x.std(dim=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)`에서 발생한 것으로 생각돼 `feat_map = x.std(dim=0, correction=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)`으로 수정해봤지만 에러가 여전히 발생하는 것을 확인했습니다.
-
-# References
+- `feat_map = x.std(dim=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)`에서 발생한 것으로 생각돼 `feat_map = x.std(dim=0, correction=0, keepdim=True).mean(dim=(1, 2, 3), keepdim=True)`으로 수정해봤지만 에러가 여전히 발생하는 것을 확인했습니다.
