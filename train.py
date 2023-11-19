@@ -105,7 +105,7 @@ def save_checkpoint(
 
 if __name__ == "__main__":
     print(f"AMP = {config.AMP}")
-    print(f"N_WORKES = {config.N_WORKERS}")
+    print(f"N_WORKERS = {config.N_WORKERS}")
 
     ROOT_DIR = Path(__file__).parent
     CKPT_DIR = ROOT_DIR/"checkpoints"
