@@ -55,7 +55,7 @@ def validate(G, val_dl, device):
     print(f"Validating...")
     G.eval()
     sum_swd = 0
-    for real_image in tqdm(val_dl):
+    for real_image in tqdm(val_dl, leave=False):
         real_image = real_image.to(device)
         noise = torch.randn(batch_size, 512, 1, 1, device=device)
         fake_image = G(noise, img_size=img_size, alpha=alpha)
