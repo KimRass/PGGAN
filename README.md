@@ -30,39 +30,39 @@
 # 2. Samples
 ## 1) Drawn During Training
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/814a659b-67c3-4352-8ecb-26edb2b8a709" width="500"> |
-|-|
+|:-:|
 | 4 × 4 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/58ff2cb0-d515-4eaa-a832-cd6669f52516" width="500"> |
-|-|
+|:-:|
 | 8 × 8 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/9742a424-5e24-4ec4-8506-2d0113a32578" width="500"> |
-|-|
+|:-:|
 | 16 × 16 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/eeacc126-0094-4715-9bd7-79518a56bf36" width="500"> |
-|-|
+|:-:|
 | 32 × 32 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/d3fd4468-5d91-436c-9f97-c09e4525b5de" width="500"> |
-|-|
+|:-:|
 | 64 × 64 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/eeb6658a-72bc-460e-b2a9-c8ff7eda5a2c" width="500"> |
-|-|
+|:-:|
 | 128 × 128 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/c981dd30-c795-488c-a097-3595b7c8233d" width="500"> |
-|-|
+|:-:|
 | 256 × 256 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/2cb8e3e6-b7d4-4451-8512-fc1713f5ca19" width="500"> |
-|-|
+|:-:|
 | 512 × 512 |
 
 | <img src="https://github.com/KimRass/PGGAN/assets/67457712/7d369874-bfc0-45ed-b4a2-73a588255b53" width="500"> |
-|-|
+|:-:|
 | 1,024 × 1,024 |
 ## 2) Drawn From the Trained Model
 <img src="https://github.com/KimRass/PGGAN/assets/67457712/bbec36d2-9256-461c-980d-a43e9d5af3ff" width="500">
