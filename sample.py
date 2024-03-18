@@ -20,7 +20,7 @@ def get_args():
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = get_args()
 
     gen = Generator()
@@ -49,3 +49,7 @@ if __name__ == "__main__":
             save_path = Path(__file__).parent/\
                 f"""generated_images/{args.img_size}×{args.img_size}_{idx}.jpg"""
             save_image(grid, path=save_path)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,4 +1,4 @@
-- [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://github.com/KimRass/PGGAN/blob/main/papers/progressive_growing_of_gans_for_improved_quality_stability_and_variation.pdf)
+<!-- - [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://github.com/KimRass/PGGAN/blob/main/papers/progressive_growing_of_gans_for_improved_quality_stability_and_variation.pdf) -->
 
 <!-- ## Training
 - Number of training images (including duplicates): 800,000 for each resolution
@@ -25,10 +25,17 @@
 
 # 1. Pre-trained Model
 - [pggan_512.pth](https://drive.google.com/file/d/1bxuY4w8R2u4kvKvI9DY32lTQhMn8mVY_/view?usp=sharing):
-  - Trained on CelebA-HQ 512 × 512
   - Average SWD: 1559.362
 
-# 2. Research
+# 2. Samples
+- <img src="https://github.com/KimRass/PGGAN/assets/67457712/bbec36d2-9256-461c-980d-a43e9d5af3ff" width="600">
+- <img src="https://github.com/KimRass/PGGAN/assets/67457712/bd9a39cf-7f13-4c27-8165-4a3811cb7471" width="600">
+- <img src="https://github.com/KimRass/PGGAN/assets/67457712/78cf3f90-cda0-42ab-8689-cd53d5c77c4d" width="600">
+- <img src="https://github.com/KimRass/PGGAN/assets/67457712/cd4ea9cd-6472-44ec-b28c-054a6caf7023" width="600">
+- <img src="https://github.com/KimRass/PGGAN/assets/67457712/996cfa7d-f111-4e6f-81ef-992585cadfcf" width="600">
+<!-- - <img src="" width="600"> -->
+
+# 3. Implementation Details
 ## 1) Normalization
 - 이전까지는 CelebA-HQ의 Training set에 대해 Mean과 Std를 계산해서 이걸 가지고 Normalize했습니다.
     - `T.Normalize(mean=(0.517, 0.416, 0.363), std=(0.303, 0.275, 0.269))`
