@@ -1,5 +1,4 @@
-# References:
-    # https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/model.py
+# Reference: https://github.com/ziwei-jiang/PGGAN-PyTorch/blob/master/model.py
 
 import torch
 import torch.nn as nn
@@ -7,23 +6,23 @@ import torch.nn.functional as F
 import numpy as np
 import math
 
-from utils import print_number_of_parameters
-
+LEAKINESS = 0.2
 # "We use leaky ReLU with leakiness 0.2 in all layers of both networks, except for the last layer
 # that uses linear activation."
-LEAKINESS = 0.2
 GAIN = 0.2
 
 
-# "EQUALIZED LEARNING RATE: W use a trivial $\mathcal{N}(0, 1)$ initialization and then
-# explicitly scale the weights at runtime. We set $w^{^}_{i} = w_{i} / c$, where $w_{i}$ are the weights
-# and $c$ is the per-layer normalization constant from He’s initializer."
-# "We initialize all bias parameters to zero and all weights according to the normal distribution
-# with unit variance. However, we scale the weights with a layer-specific constant at runtime."
-# The idea is to scale the parameters of each layer just before every forward propagation
-# that passes through. How much to scale by is determined by a statistic calculated
-# from the parameter values of each layer.
 class EqualLRLinear(nn.Module):
+    """
+    "EQUALIZED LEARNING RATE: We use a trivial $\mathcal{N}(0, 1)$ initialization and then
+    explicitly scale the weights at runtime. We set $w^{^}_{i} = w_{i} / c$, where $w_{i}$ are the weights
+    and $c$ is the per-layer normalization constant from He’s initializer."
+    "We initialize all bias parameters to zero and all weights according to the normal distribution
+    with unit variance. However, we scale the weights with a layer-specific constant at runtime."
+    "The idea is to scale the parameters of each layer just before every forward propagation
+    that passes through. How much to scale by is determined by a statistic calculated
+    from the parameter values of each layer."
+    """
     def __init__(self, in_features, out_features, gain=GAIN):
         super().__init__()
 
@@ -38,7 +37,7 @@ class EqualLRLinear(nn.Module):
 
         nn.init.normal_(self.weight)
         nn.init.zeros_(self.bias)
- 
+
     def forward(self, x):
         x = F.linear(x, weight=self.weight * self.scale, bias=self.bias)
         return x
@@ -113,8 +112,10 @@ class DownsampleBlock(nn.Module):
         return x
 
 
-# "The `fromRGB` does the reverse of `toRGB`. it uses 1×1 convolutions."
 class FromRGB(nn.Module):
+    """
+    "The `fromRGB` does the reverse of `toRGB`. it uses 1×1 convolutions."
+    """
     def __init__(self, out_channels, leakiness=LEAKINESS):
         super().__init__()
 
@@ -129,8 +130,10 @@ class FromRGB(nn.Module):
         return x
 
 
-# "'0.5×' refer to halving the image resolution using nearest neighbor average pooling."
 def _half(x):
+    """
+    "'0.5×' refer to halving the image resolution using nearest neighbor average pooling."
+    """
     return F.avg_pool2d(x, kernel_size=2, stride=2)
 
 
@@ -209,8 +212,10 @@ class UpsampleBlock(nn.Module):
         return x
 
 
-# "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses 1×1 convolutions."
 class ToRGB(nn.Module):
+    """
+    "The `toRGB` represents a layer that projects feature vectors to RGB colors. It uses 1×1 convolutions."
+    """
     def __init__(self, in_channels, leakiness=LEAKINESS):
         super().__init__()
 
@@ -229,22 +234,29 @@ def _get_depth(img_size):
     return depth
 
 
-# "PIXELWISE FEATURE VECTOR NORMALIZATION IN GENERATOR: We normalize the feature vector in each pixel
-# to unit length in the generator after each convolutional layer."
-# "$b_{x, y} = a_{x, y} / \sqrt{1 / N \sum^{N - 1}_{j=0}(a^{j}_{x, y})^{2} + \epsilon}$, where
-# $\epsilon = 10^{-8}$, $N$ is the number of feature maps, and $a_{x, y}$ and $b_{x, y}$ are
-# the original and normalized feature vector in pixel $(x, y)$, respectively."
 def perform_pixel_norm(x, eps=1e-8):
+    """
+    "PIXELWISE FEATURE VECTOR NORMALIZATION IN GENERATOR: We normalize the feature vector in each pixel
+    to unit length in the generator after each convolutional layer."
+    "$b_{x, y} = a_{x, y} / \sqrt{1 / N \sum^{N - 1}_{j=0}(a^{j}_{x, y})^{2} + \epsilon}$, where
+    $\epsilon = 10^{-8}$, $N$ is the number of feature maps, and $a_{x, y}$ and $b_{x, y}$ are
+    the original and normalized feature vector in pixel $(x, y)$, respectively."
+    """
     x = x / torch.sqrt((x ** 2).mean(dim=1, keepdim=True)+ eps)
     return x
 
 
-# "'2×' refer to doubling the image resolution using nearest neighbor filtering."
 def _double(x):
+    """
+    "'2×' refer to doubling the image resolution using nearest neighbor filtering."
+    """
     return F.interpolate(x, scale_factor=2, mode="nearest")
 
 
-class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
+class Generator(nn.Module):
+    """
+    23,079,115 ("23.1M") parameters in total.
+    """
     def __init__(self):
         super().__init__()
 
@@ -290,16 +302,22 @@ class Generator(nn.Module): # 23,079,115 ("23.1M") parameters in total.
 
 
 if __name__ == "__main__":
+    from utils import print_number_of_parameters
+    
     BATCH_SIZE = 2
     # for img_size in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
     img_size = 1024
     alpha = 0.5
     gen = Generator()
+    print_number_of_parameters(gen)
+
     x = torch.randn(BATCH_SIZE, 512, 1, 1)
     out = gen(x, img_size=img_size, alpha=alpha)
-    out.shape
+    print(out.shape)
 
-    # disc = Discriminator()
-    # x = torch.randn((BATCH_SIZE, 3, img_size, img_size))
-    # out = disc(x, img_size=img_size, alpha=alpha)
-    # out.shape
+    disc = Discriminator()
+    print_number_of_parameters(gen)
+
+    x = torch.randn((BATCH_SIZE, 3, img_size, img_size))
+    out = disc(x, img_size=img_size, alpha=alpha)
+    print(out.shape)
